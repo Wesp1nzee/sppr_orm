@@ -30,3 +30,6 @@ class User(Base):
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<User {self.email} ({self.role.value})>"
+
+
+__all__ = ["User", "UserRole"]

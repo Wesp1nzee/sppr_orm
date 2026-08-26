@@ -7,10 +7,10 @@ import time
 
 import pytest
 
+from app.auth.models import UserRole
+from app.auth.schemas import RegisterRequest
+from app.auth.service import AuthService, session_key
 from app.core.exceptions import AppException
-from app.models.user import UserRole
-from app.schemas.auth import RegisterRequest
-from app.services.auth_service import AuthService, session_key
 
 
 def _register_payload(

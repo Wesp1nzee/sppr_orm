@@ -19,7 +19,7 @@ from app.core.config import get_settings
 from app.core.csrf import CSRFMiddleware
 from app.core.exceptions import AppException, ErrorCode
 from app.core.messages import get_message, resolve_locale
-from app.schemas.common import ErrorBody, ErrorDetail, ErrorResponse
+from app.core.schemas import ErrorBody, ErrorDetail, ErrorResponse
 
 logger = logging.getLogger("sppr_orm")
 settings = get_settings()

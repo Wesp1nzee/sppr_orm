@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import enum
 
-from app.schemas.common import ErrorDetail
+from app.core.schemas import ErrorDetail
 
 
 class ErrorCode(str, enum.Enum):

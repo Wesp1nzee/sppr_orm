@@ -7,12 +7,12 @@ from typing import Any
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.models import User, UserRole
+from app.auth.repository import UserRepository
+from app.auth.schemas import RegisterRequest
 from app.core.config import get_settings
 from app.core.exceptions import AppException, ErrorCode
 from app.core.security import generate_token, hash_password, verify_password
-from app.models.user import User, UserRole
-from app.repositories.users import UserRepository
-from app.schemas.auth import RegisterRequest
 
 settings = get_settings()
 

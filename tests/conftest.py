@@ -25,13 +25,13 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.pool import StaticPool
 
-from app.api.deps import get_redis
+from app.auth.models import User, UserRole
+from app.auth.repository import UserRepository
+from app.core.deps import get_redis
 from app.core.security import hash_password
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import create_app
-from app.models.user import User, UserRole
-from app.repositories.users import UserRepository
 
 
 @pytest_asyncio.fixture

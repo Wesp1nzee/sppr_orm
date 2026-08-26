@@ -7,8 +7,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from app.auth.models import UserRole
 from app.core.config import get_settings
-from app.models.user import UserRole
 
 _settings = get_settings()
 

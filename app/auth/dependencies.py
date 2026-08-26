@@ -1,4 +1,8 @@
-"""FastAPI-зависимости: БД, Redis, текущий пользователь, RBAC."""
+"""FastAPI-зависимости домена auth: текущий пользователь, RBAC.
+
+Общие зависимости БД/Redis (``DbSession``, ``RedisClient``) живут в
+``app/core/deps.py`` — они пригодятся и другим доменам.
+"""
 
 from __future__ import annotations
 
@@ -7,26 +11,15 @@ from collections.abc import Awaitable, Callable
 from typing import Annotated
 
 from fastapi import Depends, Request
-from redis.asyncio import Redis
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth.models import User, UserRole
+from app.auth.repository import UserRepository
+from app.auth.service import AuthService
 from app.core.config import get_settings
+from app.core.deps import DbSession, RedisClient
 from app.core.exceptions import AppException, ErrorCode
-from app.db.session import get_db
-from app.models.user import User, UserRole
-from app.repositories.users import UserRepository
-from app.services.auth_service import AuthService
 
 settings = get_settings()
-
-DbSession = Annotated[AsyncSession, Depends(get_db)]
-
-
-def get_redis(request: Request) -> Redis:
-    return request.app.state.redis
-
-
-RedisClient = Annotated[Redis, Depends(get_redis)]
 
 
 async def get_current_user(
@@ -36,7 +29,7 @@ async def get_current_user(
 ) -> User:
     """Достаёт пользователя из Redis-сессии по cookie ``sid``.
 
-    - нет cookie / нет сессии в Redis → 401 UNAUTHENTICATED;
+    - нет cookie / нет сессии в Redis → 401;
     - жёсткий лимит 12 ч превышен → сессия удаляется, 401;
     - пользователь неактивен → сессия удаляется, 401;
     - при успехе TTL продлевается (скользящее продление, 30 мин).
@@ -82,3 +75,6 @@ def require_roles(*allowed: UserRole) -> Callable[[CurrentUser], Awaitable[User]
         return user
 
     return checker
+
+
+__all__ = ["CurrentUser", "get_current_user", "require_roles"]

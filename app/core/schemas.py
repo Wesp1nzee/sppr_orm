@@ -22,7 +22,7 @@ class PageMeta(BaseModel):
 class DataResponse[T](BaseModel):
     """Envelope успешного ответа.
 
-    ``meta=None`` опускается из JSON (см. ``app/api/routing.ApiRouter``:
+    ``meta=None`` опускается из JSON (см. ``app/core/routing.ApiRouter``:
     ``response_model_exclude_none=True``).
     """
 

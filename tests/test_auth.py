@@ -8,8 +8,8 @@ import time
 import httpx
 import pytest
 
-from app.models.user import UserRole
-from app.services.auth_service import session_key
+from app.auth.models import UserRole
+from app.auth.service import session_key
 
 EMAIL = "user@example.com"
 PASSWORD = "strong-password-123"

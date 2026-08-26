@@ -4,11 +4,8 @@ from __future__ import annotations
 
 from fastapi import Request, Response, status
 
-from app.api.deps import CurrentUser, DbSession, RedisClient
-from app.api.routing import ApiRouter
-from app.core.config import get_settings
-from app.core.csrf import generate_csrf_token
-from app.schemas.auth import (
+from app.auth.dependencies import CurrentUser, DbSession, RedisClient
+from app.auth.schemas import (
     CsrfData,
     LoginData,
     LoginRequest,
@@ -16,8 +13,11 @@ from app.schemas.auth import (
     RegisterRequest,
     UserOut,
 )
-from app.schemas.common import DataResponse
-from app.services.auth_service import AuthService
+from app.auth.service import AuthService
+from app.core.config import get_settings
+from app.core.csrf import generate_csrf_token
+from app.core.routing import ApiRouter
+from app.core.schemas import DataResponse
 
 settings = get_settings()
 

@@ -8,8 +8,8 @@ import pytest
 import pytest_asyncio
 from fastapi import Depends
 
-from app.api.deps import require_roles
-from app.models.user import User, UserRole
+from app.auth.dependencies import require_roles
+from app.auth.models import User, UserRole
 
 ADMIN_ONLY = "/api/v1/test/admin-only"
 LOGIN = "/api/v1/auth/login"
