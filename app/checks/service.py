@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User, UserRole
 from app.checks.constants import RULES_VERSION, CriterionStatus
 from app.checks.models import Check, CriterionResult
-from app.checks.repository import CheckRepository
+from app.checks.repository import CheckRepository, CheckRepositoryProtocol
 from app.checks.rules.registry import evaluate_criteria
 from app.checks.schemas import (
     CheckCreateRequest,
@@ -18,16 +19,29 @@ from app.checks.schemas import (
     CheckSummary,
     CriterionResultOut,
 )
+from app.core.events import EventBus, get_event_bus
 from app.core.exceptions import AppException, ErrorCode
 from app.core.pagination import PageParams
 
 STATUS_COMPLETED = "completed"
 
 
+@dataclass(frozen=True)
+class CheckCreated:
+    check_id: uuid.UUID
+    user_id: uuid.UUID
+
+
 class CheckService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        repo: CheckRepositoryProtocol | None = None,
+        events: EventBus | None = None,
+    ) -> None:
         self._session = session
-        self._repo = CheckRepository(session)
+        self._repo = repo or CheckRepository(session)
+        self._events = events or get_event_bus()
 
     async def create(self, user: User, payload: CheckCreateRequest) -> CheckOut:
         """Запускает проверку по 14 критериям и сохраняет её в БД."""
@@ -55,6 +69,7 @@ class CheckService:
             )
 
         await self._repo.add(check)
+        await self._events.publish(CheckCreated(check_id=check.id, user_id=user.id))
         return self._to_out(check)
 
     async def get_for_user(self, user: User, check_id: uuid.UUID) -> CheckOut:

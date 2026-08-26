@@ -2,19 +2,38 @@ from __future__ import annotations
 
 import json
 import time
+import uuid
+from dataclasses import dataclass
 from typing import Any
 
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User, UserRole
-from app.auth.repository import UserRepository
+from app.auth.repository import UserRepository, UserRepositoryProtocol
 from app.auth.schemas import RegisterRequest
 from app.core.config import get_settings
+from app.core.events import EventBus, get_event_bus
 from app.core.exceptions import AppException, ErrorCode
 from app.core.security import generate_token, hash_password, verify_password
 
 settings = get_settings()
+
+
+@dataclass(frozen=True)
+class UserRegistered:
+    user_id: uuid.UUID
+    email: str
+
+
+@dataclass(frozen=True)
+class UserLoggedIn:
+    user_id: uuid.UUID
+
+
+@dataclass(frozen=True)
+class UserLoggedOut:
+    user_id: uuid.UUID
 
 
 def session_key(sid: str) -> str:
@@ -25,10 +44,17 @@ def session_key(sid: str) -> str:
 class AuthService:
     """Сервис аутентификации: регистрация, вход, управление сессиями."""
 
-    def __init__(self, db: AsyncSession, redis: Redis) -> None:
+    def __init__(
+        self,
+        db: AsyncSession,
+        redis: Redis,
+        users: UserRepositoryProtocol | None = None,
+        events: EventBus | None = None,
+    ) -> None:
         self._db = db
         self._redis = redis
-        self._users = UserRepository(db)
+        self._users = users or UserRepository(db)
+        self._events = events or get_event_bus()
 
     async def register(self, payload: RegisterRequest) -> User:
         existing = await self._users.get_by_email(payload.email)
@@ -38,12 +64,14 @@ class AuthService:
             raise AppException(ErrorCode.ADMIN_SELF_REGISTRATION_FORBIDDEN)
 
         hashed = hash_password(payload.password)
-        return await self._users.create(
+        user = await self._users.create(
             email=payload.email,
             hashed_password=hashed,
             full_name=payload.full_name.strip(),
             role=payload.role,
         )
+        await self._events.publish(UserRegistered(user_id=user.id, email=user.email))
+        return user
 
     async def authenticate(self, email: str, password: str) -> User:
         user = await self._users.get_by_email(email)
@@ -70,6 +98,7 @@ class AuthService:
         await self._redis.set(
             session_key(sid), json.dumps(payload), ex=settings.session_ttl_seconds
         )
+        await self._events.publish(UserLoggedIn(user_id=user.id))
         return sid
 
     async def get_session_payload(self, sid: str) -> dict[str, Any] | None:
@@ -108,4 +137,12 @@ class AuthService:
         await self._redis.expire(session_key(sid), settings.session_ttl_seconds)
 
     async def destroy_session(self, sid: str) -> None:
+        payload = await self.get_session_payload(sid)
         await self._redis.delete(session_key(sid))
+        if payload is None:
+            return
+        try:
+            user_id = uuid.UUID(str(payload["user_id"]))
+        except (KeyError, TypeError, ValueError):  # fmt: skip
+            return
+        await self._events.publish(UserLoggedOut(user_id=user_id))

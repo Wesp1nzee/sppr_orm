@@ -15,8 +15,10 @@ from redis.asyncio import from_url as redis_from_url
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.v1.router import api_router
+from app.audit import setup_audit_subscribers
 from app.core.config import get_settings
 from app.core.csrf import CSRFMiddleware
+from app.core.events import get_event_bus
 from app.core.exceptions import AppException, ErrorCode
 from app.core.messages import get_message, resolve_locale
 from app.core.schemas import ErrorBody, ErrorDetail, ErrorResponse
@@ -39,6 +41,7 @@ def _error_response(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    setup_audit_subscribers(get_event_bus())
     app.state.redis = redis_from_url(settings.redis_url, decode_responses=True)
     try:
         await app.state.redis.ping()

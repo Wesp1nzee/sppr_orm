@@ -3,11 +3,27 @@
 from __future__ import annotations
 
 import uuid
+from typing import Protocol
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User, UserRole
+
+
+class UserRepositoryProtocol(Protocol):
+    """Интерфейс репозитория, используемый ``AuthService`` (для DI и тестов)."""
+
+    async def get_by_email(self, email: str) -> User | None: ...
+
+    async def create(
+        self,
+        *,
+        email: str,
+        hashed_password: str,
+        full_name: str,
+        role: UserRole,
+    ) -> User: ...
 
 
 class UserRepository:

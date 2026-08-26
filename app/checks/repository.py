@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
+from typing import Any, Protocol
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +14,25 @@ _SORT_COLUMNS: dict[str, Any] = {
     "created_at": Check.created_at,
     "status": Check.status,
 }
+
+
+class CheckRepositoryProtocol(Protocol):
+    """Интерфейс репозитория, используемый ``CheckService`` (для DI и тестов)."""
+
+    async def add(self, check: Check) -> Check: ...
+
+    async def get_by_id(self, check_id: uuid.UUID) -> Check | None: ...
+
+    async def count(self, *, user_id: uuid.UUID | None = None) -> int: ...
+
+    async def list_checks(
+        self,
+        *,
+        user_id: uuid.UUID | None,
+        page: int,
+        per_page: int,
+        sort: str | None,
+    ) -> list[Check]: ...
 
 
 class CheckRepository:
