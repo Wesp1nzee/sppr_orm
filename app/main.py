@@ -110,6 +110,8 @@ def create_app() -> FastAPI:
         CSRFMiddleware,
         cookie_name=settings.csrf_cookie_name,
         header_name=settings.csrf_header_name,
+        session_cookie_name=settings.session_cookie_name,
+        secret_key=settings.secret_key,
         exempt_paths=settings.csrf_exempt_paths,
     )
     app.add_middleware(

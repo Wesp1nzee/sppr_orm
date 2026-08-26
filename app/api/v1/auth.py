@@ -87,7 +87,8 @@ async def login(
     user = await service.authenticate(payload.email, payload.password)
     sid = await service.create_session(user)
 
-    csrf_token = generate_csrf_token()
+    # CSRF-токен привязан к сессии: HMAC(secret_key, sid).
+    csrf_token = generate_csrf_token(sid)
     _set_session_cookie(response, sid)
     _set_csrf_cookie(response, csrf_token)
 
@@ -122,8 +123,13 @@ async def me(user: CurrentUser) -> DataResponse[UserOut]:
 
 
 @router.get("/csrf-token", response_model=DataResponse[CsrfData])
-async def csrf_token(response: Response) -> DataResponse[CsrfData]:
-    """Выдаёт/обновляет CSRF-токен. Вызывать перед формами, если cookie ещё нет."""
-    token = generate_csrf_token()
+async def csrf_token(request: Request, response: Response) -> DataResponse[CsrfData]:
+    """Выдаёт/обновляет CSRF-токен, привязанный к текущей сессии.
+
+    Если пользователь уже вошёл — токен = HMAC(secret_key, sid); до логина
+    sid отсутствует, токен = HMAC(secret_key, b"").
+    """
+    sid = request.cookies.get(settings.session_cookie_name)
+    token = generate_csrf_token(sid)
     _set_csrf_cookie(response, token)
     return DataResponse[CsrfData](data=CsrfData(csrf_token=token))
