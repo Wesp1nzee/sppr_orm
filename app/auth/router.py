@@ -72,7 +72,6 @@ async def register(
 ) -> DataResponse[UserOut]:
     service = AuthService(db, redis)
     user = await service.register(payload)
-    await db.commit()
     return DataResponse[UserOut](data=UserOut.model_validate(user))
 
 

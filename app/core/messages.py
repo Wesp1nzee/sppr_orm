@@ -86,6 +86,10 @@ MESSAGES: dict[ErrorCode, dict[str, str]] = {
         "ru": "Недостаточно прав для выполнения операции",
         "en": "Insufficient permissions for this operation",
     },
+    ErrorCode.CHECK_NOT_FOUND: {
+        "ru": "Проверка не найдена",
+        "en": "Check not found",
+    },
 }
 
 
@@ -107,7 +111,7 @@ def get_message(
     if format_kwargs:
         try:
             return template.format(**format_kwargs)
-        except KeyError, IndexError, ValueError:
+        except (KeyError, IndexError, ValueError):  # fmt: skip
             return template
     return template
 

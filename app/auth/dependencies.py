@@ -49,7 +49,7 @@ async def get_current_user(
 
     try:
         user_id = uuid.UUID(str(payload["user_id"]))
-    except KeyError, TypeError, ValueError:
+    except (KeyError, TypeError, ValueError):  # fmt: skip
         await service.destroy_session(sid)
         raise AppException(ErrorCode.SESSION_CORRUPTED)
 

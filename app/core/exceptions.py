@@ -30,6 +30,9 @@ class ErrorCode(str, enum.Enum):
     USER_NOT_FOUND_OR_INACTIVE = "USER_NOT_FOUND_OR_INACTIVE"
     INSUFFICIENT_PERMISSIONS = "INSUFFICIENT_PERMISSIONS"
 
+    # Специфичные коды домена checks.
+    CHECK_NOT_FOUND = "CHECK_NOT_FOUND"
+
 
 #: HTTP-статус по умолчанию для каждого кода.
 _DEFAULT_STATUS: dict[ErrorCode, int] = {
@@ -50,6 +53,7 @@ _DEFAULT_STATUS: dict[ErrorCode, int] = {
     ErrorCode.SESSION_CORRUPTED: 401,
     ErrorCode.USER_NOT_FOUND_OR_INACTIVE: 401,
     ErrorCode.INSUFFICIENT_PERMISSIONS: 403,
+    ErrorCode.CHECK_NOT_FOUND: 404,
 }
 
 

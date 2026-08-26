@@ -10,6 +10,32 @@
 - Auth: сессии в Redis + HttpOnly cookie `sid` + CSRF double-submit cookie (без JWT)
 - Пароли: Argon2id (pwdlib) для новых хэшей; bcrypt — legacy-схема верификации старых хэшей
 
+## Зависимости (PostgreSQL, Redis)
+
+Перед запуском поднимите зависимости в Docker. Порты и учётные данные
+совпадают с дефолтами из `.env.example` / `app/core/config.py`.
+
+```bash
+# PostgreSQL (user=app, password=app_secret, db=sppr_orm, порт 5432)
+docker run -d --name sppr-orm-postgres \
+  -e POSTGRES_USER=app \
+  -e POSTGRES_PASSWORD=app_secret \
+  -e POSTGRES_DB=sppr_orm \
+  -p 5432:5432 \
+  postgres:16
+
+# Redis (порт 6379)
+docker run -d --name sppr-orm-redis \
+  -p 6379:6379 \
+  redis:7
+```
+
+Повторный запуск контейнеров после перезагрузки машины:
+
+```bash
+docker start sppr-orm-postgres sppr-orm-redis
+```
+
 ## Быстрый старт
 
 ```bash
@@ -17,15 +43,13 @@
 uv sync
 
 # 2. Конфигурация
-cp .env.example .env      # поправить при необходимости
+cp .env.example .env
 
-# 4. Миграции
+# 3. Миграции
 uv run alembic upgrade head
 
-# 5. Запуск
-uv run fastapi dev app/main.py      # dev-режим с auto-reload
-# или
-uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+# 4. Запуск
+uv run fastapi dev app/main.py
 ```
 
 Swagger: <http://127.0.0.1:8000/docs>

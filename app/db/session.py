@@ -29,6 +29,11 @@ async_session_factory = async_sessionmaker(
 
 
 async def get_db() -> AsyncIterator[AsyncSession]:
-    """FastAPI-зависимость: сессия на время одного запроса."""
     async with async_session_factory() as session:
-        yield session
+        try:
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
+        else:
+            await session.commit()

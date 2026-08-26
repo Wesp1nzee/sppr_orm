@@ -1,4 +1,4 @@
-.PHONY: lint format typecheck all run sync mm migrate rollback history current test
+.PHONY: lint format typecheck all run sync mm migrate rollback history current test createadmin
 
 # Запуск линтера
 lint:
@@ -51,3 +51,8 @@ current:
 # Создать пустую миграцию
 revision:
 	uv run alembic revision -m "$(m)"
+
+# Создать администратора
+# Использование: make createadmin EMAIL=admin@example.com PASSWORD=secret
+createadmin:
+	uv run python -m scripts.create_admin --email "$(EMAIL)" --password "$(PASSWORD)"

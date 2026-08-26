@@ -71,7 +71,13 @@ async def app(session_factory, fake_redis):
 
     async def override_get_db() -> AsyncIterator[AsyncSession]:
         async with session_factory() as session:
-            yield session
+            try:
+                yield session
+            except Exception:
+                await session.rollback()
+                raise
+            else:
+                await session.commit()
 
     application.dependency_overrides[get_db] = override_get_db
     application.dependency_overrides[get_redis] = lambda: fake_redis

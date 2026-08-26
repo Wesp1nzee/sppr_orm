@@ -89,13 +89,13 @@ class AuthService:
             data = json.loads(raw)
             if not isinstance(data, dict):
                 raise TypeError("session payload must be an object")
-        except json.JSONDecodeError, TypeError, ValueError:
+        except (json.JSONDecodeError, TypeError, ValueError):  # fmt: skip
             await self._redis.delete(key)
             return None
 
         try:
             hard_expire_at = float(data.get("hard_expire_at", 0))
-        except TypeError, ValueError:
+        except (TypeError, ValueError):  # fmt: skip
             hard_expire_at = 0.0
         if time.time() > hard_expire_at:
             await self._redis.delete(key)
