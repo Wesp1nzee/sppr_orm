@@ -147,7 +147,9 @@ async def test_session_ttl_issued_and_sliding(client, csrf_headers, fake_redis):
 
 
 @pytest.mark.asyncio
-async def test_hard_expire_returns_401_and_deletes_key(client, csrf_headers, fake_redis):
+async def test_hard_expire_returns_401_and_deletes_key(
+    client, csrf_headers, fake_redis
+):
     await register(client, csrf_headers)
     await login(client, csrf_headers)
     sid = client.cookies.get("sid")

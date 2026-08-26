@@ -67,7 +67,9 @@ class AuthService:
             "issued_at": now,
             "hard_expire_at": now + settings.session_hard_expire_seconds,
         }
-        await self._redis.set(session_key(sid), json.dumps(payload), ex=settings.session_ttl_seconds)
+        await self._redis.set(
+            session_key(sid), json.dumps(payload), ex=settings.session_ttl_seconds
+        )
         return sid
 
     async def get_session_payload(self, sid: str) -> dict[str, Any] | None:
@@ -87,13 +89,13 @@ class AuthService:
             data = json.loads(raw)
             if not isinstance(data, dict):
                 raise TypeError("session payload must be an object")
-        except (json.JSONDecodeError, TypeError, ValueError):
+        except json.JSONDecodeError, TypeError, ValueError:
             await self._redis.delete(key)
             return None
 
         try:
             hard_expire_at = float(data.get("hard_expire_at", 0))
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             hard_expire_at = 0.0
         if time.time() > hard_expire_at:
             await self._redis.delete(key)

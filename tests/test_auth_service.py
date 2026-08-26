@@ -48,8 +48,12 @@ async def test_register_admin_forbidden(session_factory, fake_redis):
 
 
 @pytest.mark.asyncio
-async def test_authenticate_wrong_password_and_inactive(session_factory, fake_redis, user_factory):
-    await user_factory("svc@example.com", "password123", UserRole.lawyer, is_active=False)
+async def test_authenticate_wrong_password_and_inactive(
+    session_factory, fake_redis, user_factory
+):
+    await user_factory(
+        "svc@example.com", "password123", UserRole.lawyer, is_active=False
+    )
     async with session_factory() as session:
         service = AuthService(session, fake_redis)
 

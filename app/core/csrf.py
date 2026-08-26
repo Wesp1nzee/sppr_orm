@@ -48,9 +48,7 @@ def generate_csrf_token(sid: str | None = None) -> str:
 
 def _hmac_for_sid(secret_key: str, sid: str | None) -> str:
     message = sid.encode("utf-8") if sid else b""
-    return hmac.new(
-        secret_key.encode("utf-8"), message, hashlib.sha256
-    ).hexdigest()
+    return hmac.new(secret_key.encode("utf-8"), message, hashlib.sha256).hexdigest()
 
 
 def csrf_error_response(request: Request) -> JSONResponse:
@@ -101,9 +99,9 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
         sid = request.cookies.get(self._session_cookie_name)
         expected = self._expected_token(sid)
-        if not secrets.compare_digest(cookie_token, header_token) or not secrets.compare_digest(
-            cookie_token, expected
-        ):
+        if not secrets.compare_digest(
+            cookie_token, header_token
+        ) or not secrets.compare_digest(cookie_token, expected):
             return csrf_error_response(request)
 
         return await call_next(request)

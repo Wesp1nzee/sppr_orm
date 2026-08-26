@@ -50,7 +50,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 def _register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppException)
-    async def _app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
+    async def _app_exception_handler(
+        request: Request, exc: AppException
+    ) -> JSONResponse:
         message = get_message(exc.code, resolve_locale(request), **exc.format_kwargs)
         return _error_response(exc.status_code, exc.code.value, message, exc.details)
 
@@ -106,8 +108,12 @@ def _register_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(Exception)
-    async def _unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-        logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
+    async def _unhandled_exception_handler(
+        request: Request, exc: Exception
+    ) -> JSONResponse:
+        logger.exception(
+            "Unhandled exception on %s %s", request.method, request.url.path
+        )
         return _error_response(
             500,
             ErrorCode.INTERNAL_ERROR.value,

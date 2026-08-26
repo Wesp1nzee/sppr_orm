@@ -26,7 +26,9 @@ class User(Base):
         SAEnum(UserRole, name="user_role", native_enum=True),
         default=UserRole.lawyer,
     )
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default="true"
+    )
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<User {self.email} ({self.role.value})>"

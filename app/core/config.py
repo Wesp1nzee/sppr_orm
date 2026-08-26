@@ -7,7 +7,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -41,9 +40,9 @@ class Settings(BaseSettings):
     session_cookie_name: str = "sid"
     session_key_prefix: str = "session:"
     session_ttl_seconds: int = 1800
-    session_hard_expire_seconds: int = 43200 
+    session_hard_expire_seconds: int = 43200
 
-    cookie_secure: bool = False 
+    cookie_secure: bool = False
     cookie_samesite: Literal["lax", "strict", "none"] = "lax"
     cookie_path: str = "/"
     cookie_domain: str | None = None

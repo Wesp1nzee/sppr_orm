@@ -107,7 +107,7 @@ def get_message(
     if format_kwargs:
         try:
             return template.format(**format_kwargs)
-        except (KeyError, IndexError, ValueError):
+        except KeyError, IndexError, ValueError:
             return template
     return template
 
