@@ -16,25 +16,34 @@
 совпадают с дефолтами из `.env.example` / `app/core/config.py`.
 
 ```bash
-# PostgreSQL (user=app, password=app_secret, db=sppr_orm, порт 5432)
-docker run -d --name sppr-orm-postgres \
-  -e POSTGRES_USER=app \
-  -e POSTGRES_PASSWORD=app_secret \
-  -e POSTGRES_DB=sppr_orm \
-  -p 5432:5432 \
-  postgres:16
-
-# Redis (порт 6379)
-docker run -d --name sppr-orm-redis \
-  -p 6379:6379 \
-  redis:7
+docker compose up -d
 ```
 
 Повторный запуск контейнеров после перезагрузки машины:
 
 ```bash
-docker start sppr-orm-postgres sppr-orm-redis
+docker compose up -d
 ```
+
+> Альтернатива без `docker compose` (эквивалент предыдущего способа):
+>
+> ```bash
+> # PostgreSQL (user=app, password=app_secret, db=sppr_orm, порт 5432)
+> docker run -d --name sppr-orm-postgres \
+>   -e POSTGRES_USER=app \
+>   -e POSTGRES_PASSWORD=app_secret \
+>   -e POSTGRES_DB=sppr_orm \
+>   -p 5432:5432 \
+>   postgres:16
+>
+> # Redis (порт 6379)
+> docker run -d --name sppr-orm-redis \
+>   -p 6379:6379 \
+>   redis:7
+>
+> # Повторный запуск после перезагрузки
+> docker start sppr-orm-postgres sppr-orm-redis
+> ```
 
 ## Быстрый старт
 
