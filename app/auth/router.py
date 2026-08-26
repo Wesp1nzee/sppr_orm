@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import Request, Response, status
+from fastapi import Depends, Request, Response, status
 
 from app.auth.dependencies import CurrentUser
 from app.auth.schemas import (
@@ -17,6 +17,7 @@ from app.auth.service import AuthService
 from app.core.config import get_settings
 from app.core.csrf import generate_csrf_token
 from app.core.deps import DbSession, RedisClient
+from app.core.rate_limit import rate_limit
 from app.core.routing import ApiRouter
 from app.core.schemas import DataResponse
 
@@ -66,6 +67,15 @@ def _delete_cookie(response: Response, key: str) -> None:
     response_model=DataResponse[UserOut],
     status_code=status.HTTP_201_CREATED,
     summary="Регистрация нового пользователя",
+    dependencies=[
+        Depends(
+            rate_limit(
+                scope="register",
+                limit=settings.rate_limit_register_per_minute,
+                window_seconds=settings.rate_limit_window_seconds,
+            )
+        )
+    ],
     responses={
         400: {"description": "VALIDATION_ERROR — ошибка валидации запроса"},
         403: {
@@ -73,6 +83,7 @@ def _delete_cookie(response: Response, key: str) -> None:
             "запрещена саморегистрация администратора"
         },
         409: {"description": "EMAIL_ALREADY_REGISTERED — email уже занят"},
+        429: {"description": "RATE_LIMITED — превышен лимит запросов"},
     },
 )
 async def register(
@@ -89,10 +100,20 @@ async def register(
     "/login",
     response_model=DataResponse[LoginData],
     summary="Вход в систему (устанавливает сессионную и CSRF-cookie)",
+    dependencies=[
+        Depends(
+            rate_limit(
+                scope="login",
+                limit=settings.rate_limit_login_per_minute,
+                window_seconds=settings.rate_limit_window_seconds,
+            )
+        )
+    ],
     responses={
         400: {"description": "VALIDATION_ERROR — ошибка валидации запроса"},
         401: {"description": "INVALID_CREDENTIALS — неверный email или пароль"},
         403: {"description": "ACCOUNT_DEACTIVATED — аккаунт деактивирован"},
+        429: {"description": "RATE_LIMITED — превышен лимит запросов"},
     },
 )
 async def login(

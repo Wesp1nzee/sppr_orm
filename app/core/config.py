@@ -50,6 +50,10 @@ class Settings(BaseSettings):
     password_min_length: int = 8
     password_max_length: int = 128
 
+    rate_limit_login_per_minute: int = 5
+    rate_limit_register_per_minute: int = 3
+    rate_limit_window_seconds: int = 60
+
 
 @lru_cache
 def get_settings() -> Settings:

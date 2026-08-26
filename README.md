@@ -54,6 +54,23 @@ uv run fastapi dev app/main.py
 
 Swagger: <http://127.0.0.1:8000/docs>
 
+## Секреты в production
+
+В проде `SECRET_KEY`, `DATABASE_URL` и `REDIS_URL` **не читаются из `.env`-файла
+внутри контейнера**. Они должны подставляться через секрет-менеджер окружения
+(Vault, AWS Secrets Manager, Kubernetes Secret и т.п.) как переменные окружения
+процесса.
+
+`pydantic-settings` уже поддерживает чтение из переменных окружения без `.env`
+(приоритет: env-переменные > `.env`-файл), поэтому код менять не нужно — важно
+только, чтобы секреты не попадали в образ и не лежали в файловой системе.
+
+Генерация `SECRET_KEY`:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
 ## Структура
 
 Домен-ориентированная структура (по образцу Netflix Dispatch / FastAPI Best
