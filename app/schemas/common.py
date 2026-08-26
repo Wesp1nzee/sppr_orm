@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -19,7 +19,7 @@ class PageMeta(BaseModel):
     total: int = 0
 
 
-class DataResponse(BaseModel, Generic[T]):
+class DataResponse[T](BaseModel):
     """Envelope успешного ответа.
 
     ``meta=None`` опускается из JSON (см. ``app/api/routing.ApiRouter``:

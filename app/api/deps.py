@@ -55,7 +55,7 @@ async def get_current_user(
     try:
         payload = json.loads(raw)
         if not isinstance(payload, dict):
-            raise ValueError("session payload must be an object")
+            raise TypeError("session payload must be an object")
     except (json.JSONDecodeError, TypeError, ValueError):
         await redis.delete(key)
         raise AppException.unauthenticated("Сессия повреждена, выполните вход")

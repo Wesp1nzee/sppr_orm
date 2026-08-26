@@ -1,0 +1,80 @@
+"""Unit-тесты AuthService: правила регистрации и управление сессиями."""
+
+from __future__ import annotations
+
+import pytest
+
+from app.core.exceptions import AppException
+from app.models.user import UserRole
+from app.schemas.auth import RegisterRequest
+from app.services.auth_service import AuthService, session_key
+
+
+def _register_payload(
+    email: str = "svc@example.com", role: UserRole = UserRole.lawyer
+) -> RegisterRequest:
+    return RegisterRequest(
+        email=email,
+        password="password123",
+        full_name="Сервис Тест",
+        role=role,
+    )
+
+
+@pytest.mark.asyncio
+async def test_register_success_and_duplicate(session_factory, fake_redis):
+    async with session_factory() as session:
+        service = AuthService(session, fake_redis)
+        user = await service.register(_register_payload())
+        assert user.email == "svc@example.com"
+
+        with pytest.raises(AppException) as exc_info:
+            await service.register(_register_payload())
+        assert exc_info.value.status_code == 409
+        assert exc_info.value.code.value == "CONFLICT"
+
+
+@pytest.mark.asyncio
+async def test_register_admin_forbidden(session_factory, fake_redis):
+    async with session_factory() as session:
+        service = AuthService(session, fake_redis)
+        with pytest.raises(AppException) as exc_info:
+            await service.register(_register_payload(role=UserRole.admin))
+        assert exc_info.value.status_code == 403
+        assert exc_info.value.code.value == "FORBIDDEN"
+
+
+@pytest.mark.asyncio
+async def test_authenticate_wrong_password_and_inactive(session_factory, fake_redis, user_factory):
+    await user_factory("svc@example.com", "password123", UserRole.lawyer, is_active=False)
+    async with session_factory() as session:
+        service = AuthService(session, fake_redis)
+
+        with pytest.raises(AppException) as exc_info:
+            await service.authenticate("svc@example.com", "wrong")
+        assert exc_info.value.status_code == 401
+
+        with pytest.raises(AppException) as exc_info:
+            await service.authenticate("svc@example.com", "password123")
+        assert exc_info.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_session_payload_roundtrip(session_factory, fake_redis):
+    async with session_factory() as session:
+        service = AuthService(session, fake_redis)
+        user = await service.register(_register_payload())
+        await session.commit()
+
+        sid = await service.create_session(user)
+        payload = await service.get_session_payload(sid)
+        assert payload is not None
+        assert payload["user_id"] == str(user.id)
+        assert payload["role"] == UserRole.lawyer.value
+        assert payload["hard_expire_at"] > payload["issued_at"]
+
+        await service.refresh_session_ttl(sid)
+        assert await fake_redis.ttl(session_key(sid)) > 0
+
+        await service.destroy_session(sid)
+        assert await service.get_session_payload(sid) is None

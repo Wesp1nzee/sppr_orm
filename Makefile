@@ -1,4 +1,4 @@
-.PHONY: lint format typecheck all run sync mm migrate rollback history current
+.PHONY: lint format typecheck all run sync mm migrate rollback history current test
 
 # Запуск линтера
 lint:
@@ -17,7 +17,7 @@ all: format lint typecheck
 
 # Запуск FastAPI в режиме разработки
 run:
-	uv run uvicorn src.main:app --reload
+	uv run uvicorn app.main:app --reload
 
 # Запуск тестов
 test:

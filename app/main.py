@@ -11,7 +11,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from redis.asyncio import Redis, from_url as redis_from_url
+from redis.asyncio import from_url as redis_from_url
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.v1.router import api_router
@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.redis = redis_from_url(settings.redis_url, decode_responses=True)
     try:
         await app.state.redis.ping()
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — приложение должно стартовать и без Redis
         logger.warning("Redis недоступен (%s): %s", settings.redis_url, exc)
     yield
     await app.state.redis.aclose()

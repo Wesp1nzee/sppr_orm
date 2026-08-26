@@ -44,21 +44,21 @@ class AppException(Exception):
     # --- Фабрики типовых ошибок ------------------------------------------
 
     @classmethod
-    def not_found(cls, message: str = "Ресурс не найден") -> "AppException":
+    def not_found(cls, message: str = "Ресурс не найден") -> AppException:
         return cls(ErrorCode.NOT_FOUND, message, 404)
 
     @classmethod
-    def conflict(cls, message: str) -> "AppException":
+    def conflict(cls, message: str) -> AppException:
         return cls(ErrorCode.CONFLICT, message, 409)
 
     @classmethod
-    def unauthenticated(cls, message: str = "Не авторизован") -> "AppException":
+    def unauthenticated(cls, message: str = "Не авторизован") -> AppException:
         return cls(ErrorCode.UNAUTHENTICATED, message, 401)
 
     @classmethod
-    def forbidden(cls, message: str = "Недостаточно прав") -> "AppException":
+    def forbidden(cls, message: str = "Недостаточно прав") -> AppException:
         return cls(ErrorCode.FORBIDDEN, message, 403)
 
     @classmethod
-    def rate_limited(cls, message: str = "Слишком много запросов, попробуйте позже") -> "AppException":
+    def rate_limited(cls, message: str = "Слишком много запросов, попробуйте позже") -> AppException:
         return cls(ErrorCode.RATE_LIMITED, message, 429)
