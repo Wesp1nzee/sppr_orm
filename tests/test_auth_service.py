@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+import time
+
 import pytest
 
 from app.core.exceptions import AppException
@@ -78,3 +81,36 @@ async def test_session_payload_roundtrip(session_factory, fake_redis):
 
         await service.destroy_session(sid)
         assert await service.get_session_payload(sid) is None
+
+
+@pytest.mark.asyncio
+async def test_get_session_payload_hard_expired(session_factory, fake_redis):
+    async with session_factory() as session:
+        service = AuthService(session, fake_redis)
+        user = await service.register(_register_payload())
+        await session.commit()
+
+        sid = await service.create_session(user)
+        key = session_key(sid)
+
+        payload = json.loads(await fake_redis.get(key))
+        payload["hard_expire_at"] = time.time() - 1
+        await fake_redis.set(key, json.dumps(payload))
+
+        assert await service.get_session_payload(sid) is None
+        assert await fake_redis.exists(key) == 0
+
+
+@pytest.mark.asyncio
+async def test_get_session_payload_corrupted_deletes_key(session_factory, fake_redis):
+    async with session_factory() as session:
+        service = AuthService(session, fake_redis)
+        user = await service.register(_register_payload())
+        await session.commit()
+
+        sid = await service.create_session(user)
+        key = session_key(sid)
+        await fake_redis.set(key, "{not-json")
+
+        assert await service.get_session_payload(sid) is None
+        assert await fake_redis.exists(key) == 0

@@ -53,7 +53,6 @@ class AuthService:
             raise AppException.forbidden("Учётная запись деактивирована")
         return user
 
-
     async def create_session(self, user: User) -> str:
         """Создаёт сессию ``session:{sid}`` с TTL 30 мин и жёстким лимитом 12 ч.
 
@@ -72,16 +71,38 @@ class AuthService:
         return sid
 
     async def get_session_payload(self, sid: str) -> dict[str, Any] | None:
-        raw = await self._redis.get(session_key(sid))
+        """Возвращает payload сессии или None.
+
+        Возвращает None и удаляет ключ из Redis, если сессия:
+        - отсутствует;
+        - битая (не JSON / не объект);
+        - истекла по жёсткому лимиту ``hard_expire_at`` (12 ч) — независимо
+          от скользящего TTL.
+        """
+        key = session_key(sid)
+        raw = await self._redis.get(key)
         if raw is None:
             return None
         try:
             data = json.loads(raw)
-        except (json.JSONDecodeError, TypeError):
+            if not isinstance(data, dict):
+                raise TypeError("session payload must be an object")
+        except (json.JSONDecodeError, TypeError, ValueError):
+            await self._redis.delete(key)
             return None
-        return data if isinstance(data, dict) else None
+
+        try:
+            hard_expire_at = float(data.get("hard_expire_at", 0))
+        except (TypeError, ValueError):
+            hard_expire_at = 0.0
+        if time.time() > hard_expire_at:
+            await self._redis.delete(key)
+            return None
+
+        return data
 
     async def refresh_session_ttl(self, sid: str) -> None:
+        """Скользящее продление TTL сессии (+30 мин от текущего момента)."""
         await self._redis.expire(session_key(sid), settings.session_ttl_seconds)
 
     async def destroy_session(self, sid: str) -> None:

@@ -17,7 +17,7 @@ from app.schemas.auth import (
     UserOut,
 )
 from app.schemas.common import DataResponse
-from app.services.auth_service import AuthService, session_key
+from app.services.auth_service import AuthService
 
 settings = get_settings()
 
@@ -107,11 +107,12 @@ async def login(
 async def logout(
     request: Request,
     response: Response,
+    db: DbSession,
     redis: RedisClient,
 ) -> DataResponse[LogoutData]:
     sid = request.cookies.get(settings.session_cookie_name)
     if sid:
-        await redis.delete(session_key(sid))
+        await AuthService(db, redis).destroy_session(sid)
     _delete_cookie(response, settings.session_cookie_name)
     _delete_cookie(response, settings.csrf_cookie_name)
     return DataResponse[LogoutData](data=LogoutData())
