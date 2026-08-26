@@ -6,19 +6,20 @@ Redis: fakeredis.
 
 Приложение строится через ``app.main:create_app``; реальные зависимости
 БД/Redis подменяются через ``app.dependency_overrides`` (без monkeypatch
-глобалов). Lifespan не запускается (httpx.ASGITransport), поэтому
-``app.state.redis`` не используется — работает только override.
+``app.state.redis`` — работает только override).
 """
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 
 import httpx
 import pytest
 import pytest_asyncio
 from fakeredis import FakeAsyncRedis
+from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
@@ -33,9 +34,11 @@ from app.db.base import Base
 from app.db.session import get_db
 from app.main import create_app
 
+UserFactory = Callable[..., Awaitable[User]]
+
 
 @pytest_asyncio.fixture
-async def db_engine():
+async def db_engine() -> AsyncIterator[AsyncEngine]:
     """In-memory SQLite: одно общее соединение на весь тест (StaticPool)."""
     engine = create_async_engine(
         "sqlite+aiosqlite://",
@@ -49,7 +52,9 @@ async def db_engine():
 
 
 @pytest_asyncio.fixture
-async def session_factory(db_engine):
+async def session_factory(
+    db_engine: AsyncEngine,
+) -> async_sessionmaker[AsyncSession]:
     return async_sessionmaker(
         db_engine,
         class_=AsyncSession,
@@ -59,14 +64,17 @@ async def session_factory(db_engine):
 
 
 @pytest_asyncio.fixture
-async def fake_redis():
+async def fake_redis() -> AsyncIterator[FakeAsyncRedis]:
     redis = FakeAsyncRedis(decode_responses=True)
     yield redis
     await redis.aclose()
 
 
 @pytest_asyncio.fixture
-async def app(session_factory, fake_redis):
+async def app(
+    session_factory: async_sessionmaker[AsyncSession],
+    fake_redis: FakeAsyncRedis,
+) -> FastAPI:
     application = create_app()
 
     async def override_get_db() -> AsyncIterator[AsyncSession]:
@@ -79,13 +87,16 @@ async def app(session_factory, fake_redis):
             else:
                 await session.commit()
 
+    def override_get_redis() -> FakeAsyncRedis:
+        return fake_redis
+
     application.dependency_overrides[get_db] = override_get_db
-    application.dependency_overrides[get_redis] = lambda: fake_redis
+    application.dependency_overrides[get_redis] = override_get_redis
     return application
 
 
 @pytest_asyncio.fixture
-async def client(app) -> AsyncIterator[httpx.AsyncClient]:
+async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(
         transport=transport, base_url="http://testserver"
@@ -103,7 +114,9 @@ async def csrf_headers(client: httpx.AsyncClient) -> dict[str, str]:
 
 
 @pytest.fixture
-def user_factory(session_factory):
+def user_factory(
+    session_factory: async_sessionmaker[AsyncSession],
+) -> UserFactory:
     """Фабрика пользователей напрямую в БД (минуя API-регистрацию)."""
 
     async def _make(

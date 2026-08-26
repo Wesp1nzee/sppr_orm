@@ -51,7 +51,7 @@ async def get_current_user(
         user_id = uuid.UUID(str(payload["user_id"]))
     except (KeyError, TypeError, ValueError):  # fmt: skip
         await service.destroy_session(sid)
-        raise AppException(ErrorCode.SESSION_CORRUPTED)
+        raise AppException(ErrorCode.SESSION_CORRUPTED) from None
 
     user = await UserRepository(db).get_by_id(user_id)
     if user is None or not user.is_active:

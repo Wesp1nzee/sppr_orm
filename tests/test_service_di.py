@@ -6,6 +6,7 @@ import uuid
 from datetime import UTC, datetime
 
 import pytest
+from fakeredis import FakeAsyncRedis
 
 from app.auth.models import User, UserRole
 from app.auth.schemas import RegisterRequest
@@ -81,7 +82,9 @@ class FakeCheckRepository:
 
 
 @pytest.mark.asyncio
-async def test_auth_service_uses_injected_repository(fake_redis):
+async def test_auth_service_uses_injected_repository(
+    fake_redis: FakeAsyncRedis,
+) -> None:
     fake = FakeUserRepository()
     service = AuthService(db=None, redis=fake_redis, users=fake)  # type: ignore[arg-type]
 
@@ -99,7 +102,9 @@ async def test_auth_service_uses_injected_repository(fake_redis):
 
 
 @pytest.mark.asyncio
-async def test_check_service_uses_injected_repository(fake_redis):
+async def test_check_service_uses_injected_repository(
+    fake_redis: FakeAsyncRedis,
+) -> None:
     fake = FakeCheckRepository()
     service = CheckService(session=None, repo=fake)  # type: ignore[arg-type]
 

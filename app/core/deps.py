@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, cast
 
 from fastapi import Depends, Request
 from redis.asyncio import Redis
@@ -14,7 +14,7 @@ DbSession = Annotated[AsyncSession, Depends(get_db)]
 
 
 def get_redis(request: Request) -> Redis:
-    return request.app.state.redis
+    return cast(Redis, request.app.state.redis)
 
 
 RedisClient = Annotated[Redis, Depends(get_redis)]

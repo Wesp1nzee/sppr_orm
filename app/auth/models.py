@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import enum
+from enum import StrEnum
 
 from sqlalchemy import Boolean, String
 from sqlalchemy import Enum as SAEnum
@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
 
-class UserRole(str, enum.Enum):
+class UserRole(StrEnum):
     lawyer = "lawyer"
     investigator = "investigator"
     officer = "officer"

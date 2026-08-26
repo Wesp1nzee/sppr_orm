@@ -22,6 +22,11 @@ router = ApiRouter(prefix="/checks", tags=["checks"])
     "",
     response_model=DataResponse[CheckOut],
     status_code=status.HTTP_201_CREATED,
+    summary="Запуск проверки законности ОРМ по 14 критериям",
+    responses={
+        400: {"description": "VALIDATION_ERROR — ошибка валидации запроса"},
+        401: {"description": "UNAUTHENTICATED — не авторизован"},
+    },
 )
 async def create_check(
     payload: CheckCreateRequest,
@@ -32,7 +37,15 @@ async def create_check(
     return DataResponse[CheckOut](data=check)
 
 
-@router.get("/{check_id}", response_model=DataResponse[CheckOut])
+@router.get(
+    "/{check_id}",
+    response_model=DataResponse[CheckOut],
+    summary="Получение проверки по id (владелец или администратор)",
+    responses={
+        401: {"description": "UNAUTHENTICATED — не авторизован"},
+        404: {"description": "CHECK_NOT_FOUND — проверка не найдена"},
+    },
+)
 async def get_check(
     check_id: uuid.UUID,
     user: CurrentUser,
@@ -42,7 +55,12 @@ async def get_check(
     return DataResponse[CheckOut](data=check)
 
 
-@router.get("", response_model=DataResponse[list[CheckListItem]])
+@router.get(
+    "",
+    response_model=DataResponse[list[CheckListItem]],
+    summary="Список проверок (свои — для пользователя, все — для администратора)",
+    responses={401: {"description": "UNAUTHENTICATED — не авторизован"}},
+)
 async def list_checks(
     user: CurrentUser,
     db: DbSession,

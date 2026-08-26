@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import Request, Response, status
 
-from app.auth.dependencies import CurrentUser, DbSession, RedisClient
+from app.auth.dependencies import CurrentUser
 from app.auth.schemas import (
     CsrfData,
     LoginData,
@@ -16,6 +16,7 @@ from app.auth.schemas import (
 from app.auth.service import AuthService
 from app.core.config import get_settings
 from app.core.csrf import generate_csrf_token
+from app.core.deps import DbSession, RedisClient
 from app.core.routing import ApiRouter
 from app.core.schemas import DataResponse
 
@@ -64,6 +65,15 @@ def _delete_cookie(response: Response, key: str) -> None:
     "/register",
     response_model=DataResponse[UserOut],
     status_code=status.HTTP_201_CREATED,
+    summary="Регистрация нового пользователя",
+    responses={
+        400: {"description": "VALIDATION_ERROR — ошибка валидации запроса"},
+        403: {
+            "description": "ADMIN_SELF_REGISTRATION_FORBIDDEN — "
+            "запрещена саморегистрация администратора"
+        },
+        409: {"description": "EMAIL_ALREADY_REGISTERED — email уже занят"},
+    },
 )
 async def register(
     payload: RegisterRequest,
@@ -75,7 +85,16 @@ async def register(
     return DataResponse[UserOut](data=UserOut.model_validate(user))
 
 
-@router.post("/login", response_model=DataResponse[LoginData])
+@router.post(
+    "/login",
+    response_model=DataResponse[LoginData],
+    summary="Вход в систему (устанавливает сессионную и CSRF-cookie)",
+    responses={
+        400: {"description": "VALIDATION_ERROR — ошибка валидации запроса"},
+        401: {"description": "INVALID_CREDENTIALS — неверный email или пароль"},
+        403: {"description": "ACCOUNT_DEACTIVATED — аккаунт деактивирован"},
+    },
+)
 async def login(
     payload: LoginRequest,
     response: Response,
@@ -102,7 +121,11 @@ async def login(
     )
 
 
-@router.post("/logout", response_model=DataResponse[LogoutData])
+@router.post(
+    "/logout",
+    response_model=DataResponse[LogoutData],
+    summary="Выход из системы (удаляет сессию и cookie)",
+)
 async def logout(
     request: Request,
     response: Response,
@@ -117,12 +140,21 @@ async def logout(
     return DataResponse[LogoutData](data=LogoutData())
 
 
-@router.get("/me", response_model=DataResponse[UserOut])
+@router.get(
+    "/me",
+    response_model=DataResponse[UserOut],
+    summary="Текущий авторизованный пользователь",
+    responses={401: {"description": "UNAUTHENTICATED — не авторизован"}},
+)
 async def me(user: CurrentUser) -> DataResponse[UserOut]:
     return DataResponse[UserOut](data=UserOut.model_validate(user))
 
 
-@router.get("/csrf-token", response_model=DataResponse[CsrfData])
+@router.get(
+    "/csrf-token",
+    response_model=DataResponse[CsrfData],
+    summary="Получение CSRF-токена, привязанного к текущей сессии",
+)
 async def csrf_token(request: Request, response: Response) -> DataResponse[CsrfData]:
     """Выдаёт/обновляет CSRF-токен, привязанный к текущей сессии.
 

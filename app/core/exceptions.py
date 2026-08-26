@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import enum
+from enum import StrEnum
 
 from app.core.schemas import ErrorDetail
 
 
-class ErrorCode(str, enum.Enum):
+class ErrorCode(StrEnum):
     """Коды ошибок, согласованные в api.md (раздел 1.2)."""
 
     VALIDATION_ERROR = "VALIDATION_ERROR"
@@ -15,7 +15,7 @@ class ErrorCode(str, enum.Enum):
     FORBIDDEN = "FORBIDDEN"
     NOT_FOUND = "NOT_FOUND"
     CONFLICT = "CONFLICT"
-    CSRF_TOKEN_INVALID = "CSRF_TOKEN_INVALID"
+    CSRF_TOKEN_INVALID = "CSRF_TOKEN_INVALID"  # noqa: S105 — код ошибки API, не секрет
     RATE_LIMITED = "RATE_LIMITED"
     METHOD_NOT_ALLOWED = "METHOD_NOT_ALLOWED"
     INTERNAL_ERROR = "INTERNAL_ERROR"

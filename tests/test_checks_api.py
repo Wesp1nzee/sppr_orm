@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 import httpx
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.auth.models import UserRole
+from app.auth.models import User, UserRole
 from app.checks.models import Check
+
+UserFactory = Callable[..., Awaitable[User]]
 
 CHECKS = "/api/v1/checks"
 LOGIN = "/api/v1/auth/login"
@@ -42,7 +47,7 @@ async def _create_check(
     client: httpx.AsyncClient,
     headers: dict[str, str],
     *,
-    answers: dict | None = None,
+    answers: dict[str, dict[str, Any]] | None = None,
     case_title: str | None = None,
 ) -> httpx.Response:
     return await client.post(
@@ -53,14 +58,16 @@ async def _create_check(
 
 
 @pytest.mark.asyncio
-async def test_anonymous_create_returns_401(client, csrf_headers):
+async def test_anonymous_create_returns_401(
+    client: httpx.AsyncClient, csrf_headers: dict[str, str]
+) -> None:
     response = await client.post(CHECKS, json={"answers": {}}, headers=csrf_headers)
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "SESSION_NOT_FOUND"
 
 
 @pytest.mark.asyncio
-async def test_anonymous_list_returns_401(client):
+async def test_anonymous_list_returns_401(client: httpx.AsyncClient) -> None:
     response = await client.get(CHECKS)
     assert response.status_code == 401
 
@@ -75,7 +82,9 @@ async def test_anonymous_list_returns_401(client):
     ],
 )
 @pytest.mark.asyncio
-async def test_any_role_can_create_check(client, user_factory, role):
+async def test_any_role_can_create_check(
+    client: httpx.AsyncClient, user_factory: UserFactory, role: UserRole
+) -> None:
     email = f"{role.value}@example.com"
     await user_factory(email, PASSWORD, role)
     headers = await _login(client, email)
@@ -95,7 +104,9 @@ async def test_any_role_can_create_check(client, user_factory, role):
 
 
 @pytest.mark.asyncio
-async def test_create_check_response_envelope(client, user_factory):
+async def test_create_check_response_envelope(
+    client: httpx.AsyncClient, user_factory: UserFactory
+) -> None:
     await user_factory("env@example.com", PASSWORD, UserRole.lawyer)
     headers = await _login(client, "env@example.com")
 
@@ -115,7 +126,9 @@ async def test_create_check_response_envelope(client, user_factory):
 
 
 @pytest.mark.asyncio
-async def test_priority_criteria_for_lawyer(client, user_factory):
+async def test_priority_criteria_for_lawyer(
+    client: httpx.AsyncClient, user_factory: UserFactory
+) -> None:
     await user_factory("prio@example.com", PASSWORD, UserRole.lawyer)
     headers = await _login(client, "prio@example.com")
 
@@ -129,7 +142,11 @@ async def test_priority_criteria_for_lawyer(client, user_factory):
 
 
 @pytest.mark.asyncio
-async def test_check_persisted_to_db(client, user_factory, session_factory):
+async def test_check_persisted_to_db(
+    client: httpx.AsyncClient,
+    user_factory: UserFactory,
+    session_factory: async_sessionmaker[AsyncSession],
+) -> None:
     user = await user_factory("db@example.com", PASSWORD, UserRole.lawyer)
     headers = await _login(client, "db@example.com")
 
@@ -148,7 +165,9 @@ async def test_check_persisted_to_db(client, user_factory, session_factory):
 
 
 @pytest.mark.asyncio
-async def test_user_sees_only_own_checks(client, user_factory):
+async def test_user_sees_only_own_checks(
+    client: httpx.AsyncClient, user_factory: UserFactory
+) -> None:
     await user_factory("a@example.com", PASSWORD, UserRole.lawyer)
     await user_factory("b@example.com", PASSWORD, UserRole.lawyer)
 
@@ -171,7 +190,9 @@ async def test_user_sees_only_own_checks(client, user_factory):
 
 
 @pytest.mark.asyncio
-async def test_admin_sees_all_checks(client, user_factory):
+async def test_admin_sees_all_checks(
+    client: httpx.AsyncClient, user_factory: UserFactory
+) -> None:
     await user_factory("law@example.com", PASSWORD, UserRole.lawyer)
     await user_factory("admin@example.com", PASSWORD, UserRole.admin)
 
@@ -186,7 +207,9 @@ async def test_admin_sees_all_checks(client, user_factory):
 
 
 @pytest.mark.asyncio
-async def test_foreign_check_returns_404(client, user_factory):
+async def test_foreign_check_returns_404(
+    client: httpx.AsyncClient, user_factory: UserFactory
+) -> None:
     await user_factory("owner@example.com", PASSWORD, UserRole.lawyer)
     await user_factory("stranger@example.com", PASSWORD, UserRole.lawyer)
 
@@ -201,7 +224,9 @@ async def test_foreign_check_returns_404(client, user_factory):
 
 
 @pytest.mark.asyncio
-async def test_get_check_by_owner(client, user_factory):
+async def test_get_check_by_owner(
+    client: httpx.AsyncClient, user_factory: UserFactory
+) -> None:
     await user_factory("self@example.com", PASSWORD, UserRole.lawyer)
     headers = await _login(client, "self@example.com")
     created = await _create_check(client, headers, answers=VALID_ANSWERS)
@@ -214,7 +239,9 @@ async def test_get_check_by_owner(client, user_factory):
 
 
 @pytest.mark.asyncio
-async def test_list_pagination(client, user_factory):
+async def test_list_pagination(
+    client: httpx.AsyncClient, user_factory: UserFactory
+) -> None:
     await user_factory("page@example.com", PASSWORD, UserRole.lawyer)
     headers = await _login(client, "page@example.com")
     for i in range(3):
@@ -231,7 +258,9 @@ async def test_list_pagination(client, user_factory):
 
 
 @pytest.mark.asyncio
-async def test_create_check_validation_error(client, user_factory):
+async def test_create_check_validation_error(
+    client: httpx.AsyncClient, user_factory: UserFactory
+) -> None:
     await user_factory("val@example.com", PASSWORD, UserRole.lawyer)
     headers = await _login(client, "val@example.com")
 

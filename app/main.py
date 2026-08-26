@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.redis = redis_from_url(settings.redis_url, decode_responses=True)
     try:
         await app.state.redis.ping()
-    except Exception as exc:  # noqa: BLE001 — приложение должно стартовать и без Redis
+    except Exception as exc:  # приложение должно стартовать и без Redis
         logger.warning("Redis недоступен (%s): %s", settings.redis_url, exc)
     yield
     await app.state.redis.aclose()

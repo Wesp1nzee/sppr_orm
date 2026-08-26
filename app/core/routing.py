@@ -14,7 +14,7 @@ class ApiRouter(APIRouter):
     у непагинированных ответов) опускаются из JSON, как требует api.md.
     """
 
-    def api_route(self, *args: Any, **kwargs: Any) -> Any:  # type: ignore[override]
+    def api_route(self, *args: Any, **kwargs: Any) -> Any:
         # Декораторы APIRouter всегда явно передают response_model_exclude_none,
         # поэтому перекрываем значение, а не используем setdefault.
         kwargs["response_model_exclude_none"] = True

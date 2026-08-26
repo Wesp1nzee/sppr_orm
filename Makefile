@@ -2,7 +2,7 @@
 
 # Запуск линтера
 lint:
-	uv run ruff check . --fix
+	uv run ruff check .
 
 # Форматирование кода
 format:
@@ -21,7 +21,7 @@ run:
 
 # Запуск тестов
 test:
-	uv run pytest tests/ -v
+	uv run pytest tests/ -v --cov=app --cov-report=term-missing
 
 # Синхронизация зависимостей
 sync:

@@ -4,13 +4,18 @@ from __future__ import annotations
 
 import json
 import time
+from collections.abc import Awaitable, Callable
 
 import pytest
+from fakeredis import FakeAsyncRedis
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.auth.models import UserRole
+from app.auth.models import User, UserRole
 from app.auth.schemas import RegisterRequest
 from app.auth.service import AuthService, session_key
 from app.core.exceptions import AppException
+
+UserFactory = Callable[..., Awaitable[User]]
 
 
 def _register_payload(
@@ -25,7 +30,9 @@ def _register_payload(
 
 
 @pytest.mark.asyncio
-async def test_register_success_and_duplicate(session_factory, fake_redis):
+async def test_register_success_and_duplicate(
+    session_factory: async_sessionmaker[AsyncSession], fake_redis: FakeAsyncRedis
+) -> None:
     async with session_factory() as session:
         service = AuthService(session, fake_redis)
         user = await service.register(_register_payload())
@@ -38,7 +45,9 @@ async def test_register_success_and_duplicate(session_factory, fake_redis):
 
 
 @pytest.mark.asyncio
-async def test_register_admin_forbidden(session_factory, fake_redis):
+async def test_register_admin_forbidden(
+    session_factory: async_sessionmaker[AsyncSession], fake_redis: FakeAsyncRedis
+) -> None:
     async with session_factory() as session:
         service = AuthService(session, fake_redis)
         with pytest.raises(AppException) as exc_info:
@@ -49,8 +58,10 @@ async def test_register_admin_forbidden(session_factory, fake_redis):
 
 @pytest.mark.asyncio
 async def test_authenticate_wrong_password_and_inactive(
-    session_factory, fake_redis, user_factory
-):
+    session_factory: async_sessionmaker[AsyncSession],
+    fake_redis: FakeAsyncRedis,
+    user_factory: UserFactory,
+) -> None:
     await user_factory(
         "svc@example.com", "password123", UserRole.lawyer, is_active=False
     )
@@ -69,7 +80,9 @@ async def test_authenticate_wrong_password_and_inactive(
 
 
 @pytest.mark.asyncio
-async def test_session_payload_roundtrip(session_factory, fake_redis):
+async def test_session_payload_roundtrip(
+    session_factory: async_sessionmaker[AsyncSession], fake_redis: FakeAsyncRedis
+) -> None:
     async with session_factory() as session:
         service = AuthService(session, fake_redis)
         user = await service.register(_register_payload())
@@ -90,7 +103,9 @@ async def test_session_payload_roundtrip(session_factory, fake_redis):
 
 
 @pytest.mark.asyncio
-async def test_get_session_payload_hard_expired(session_factory, fake_redis):
+async def test_get_session_payload_hard_expired(
+    session_factory: async_sessionmaker[AsyncSession], fake_redis: FakeAsyncRedis
+) -> None:
     async with session_factory() as session:
         service = AuthService(session, fake_redis)
         user = await service.register(_register_payload())
@@ -99,7 +114,9 @@ async def test_get_session_payload_hard_expired(session_factory, fake_redis):
         sid = await service.create_session(user)
         key = session_key(sid)
 
-        payload = json.loads(await fake_redis.get(key))
+        raw = await fake_redis.get(key)
+        assert raw is not None
+        payload = json.loads(raw)
         payload["hard_expire_at"] = time.time() - 1
         await fake_redis.set(key, json.dumps(payload))
 
@@ -108,7 +125,9 @@ async def test_get_session_payload_hard_expired(session_factory, fake_redis):
 
 
 @pytest.mark.asyncio
-async def test_get_session_payload_corrupted_deletes_key(session_factory, fake_redis):
+async def test_get_session_payload_corrupted_deletes_key(
+    session_factory: async_sessionmaker[AsyncSession], fake_redis: FakeAsyncRedis
+) -> None:
     async with session_factory() as session:
         service = AuthService(session, fake_redis)
         user = await service.register(_register_payload())

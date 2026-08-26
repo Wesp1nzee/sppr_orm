@@ -29,11 +29,17 @@ class Criterion02(CriterionRule):
         if limits_rights and not has_court_order:
             return RuleOutput(
                 status=CriterionStatus.VIOLATION,
-                comment="ОРМ ограничивает конституционные права, но судебное решение отсутствует.",
+                comment=(
+                    "ОРМ ограничивает конституционные права, но судебное "
+                    "решение отсутствует."
+                ),
             )
         return RuleOutput(
             status=CriterionStatus.PASSED,
-            comment="Судебное решение оформлено либо ОРМ не ограничивает конституционные права.",
+            comment=(
+                "Судебное решение оформлено либо ОРМ не ограничивает "
+                "конституционные права."
+            ),
         )
 
 

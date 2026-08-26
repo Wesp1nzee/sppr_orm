@@ -27,7 +27,10 @@ class Criterion01(CriterionRule):
             )
         return RuleOutput(
             status=CriterionStatus.PASSED,
-            comment="Признаки преступления и поручение следователя/дознавателя подтверждены.",
+            comment=(
+                "Признаки преступления и поручение следователя/дознавателя "
+                "подтверждены."
+            ),
         )
 
 

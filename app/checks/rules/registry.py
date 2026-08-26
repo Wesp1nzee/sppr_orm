@@ -55,6 +55,6 @@ def evaluate_criteria(
     return results
 
 
-assert len(RULES) == TOTAL_CRITERIA, "количество правил должно совпадать с ТЗ"
+assert len(RULES) == TOTAL_CRITERIA, "количество правил должно совпадать с ТЗ"  # noqa: S101
 
 __all__ = ["RULES", "evaluate_criteria"]

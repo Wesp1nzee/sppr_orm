@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import json
 import time
+from collections.abc import Awaitable, Callable
 
 import httpx
 import pytest
+from fakeredis import FakeAsyncRedis
 
-from app.auth.models import UserRole
+from app.auth.models import User, UserRole
 from app.auth.service import session_key
+
+UserFactory = Callable[..., Awaitable[User]]
 
 EMAIL = "user@example.com"
 PASSWORD = "strong-password-123"
@@ -52,7 +56,9 @@ async def login(
 
 
 @pytest.mark.asyncio
-async def test_register_success(client, csrf_headers):
+async def test_register_success(
+    client: httpx.AsyncClient, csrf_headers: dict[str, str]
+) -> None:
     response = await register(client, csrf_headers)
     assert response.status_code == 201
     data = response.json()["data"]
@@ -61,7 +67,9 @@ async def test_register_success(client, csrf_headers):
 
 
 @pytest.mark.asyncio
-async def test_register_duplicate_email_conflict(client, csrf_headers):
+async def test_register_duplicate_email_conflict(
+    client: httpx.AsyncClient, csrf_headers: dict[str, str]
+) -> None:
     assert (await register(client, csrf_headers)).status_code == 201
     response = await register(client, csrf_headers)
     assert response.status_code == 409
@@ -69,14 +77,18 @@ async def test_register_duplicate_email_conflict(client, csrf_headers):
 
 
 @pytest.mark.asyncio
-async def test_register_admin_forbidden(client, csrf_headers):
+async def test_register_admin_forbidden(
+    client: httpx.AsyncClient, csrf_headers: dict[str, str]
+) -> None:
     response = await register(client, csrf_headers, role="admin")
     assert response.status_code == 403
     assert response.json()["error"]["code"] == "ADMIN_SELF_REGISTRATION_FORBIDDEN"
 
 
 @pytest.mark.asyncio
-async def test_login_success_sets_cookies(client, csrf_headers):
+async def test_login_success_sets_cookies(
+    client: httpx.AsyncClient, csrf_headers: dict[str, str]
+) -> None:
     await register(client, csrf_headers)
     response = await login(client, csrf_headers)
     assert response.status_code == 200
@@ -86,7 +98,9 @@ async def test_login_success_sets_cookies(client, csrf_headers):
 
 
 @pytest.mark.asyncio
-async def test_login_wrong_password(client, csrf_headers):
+async def test_login_wrong_password(
+    client: httpx.AsyncClient, csrf_headers: dict[str, str]
+) -> None:
     await register(client, csrf_headers)
     response = await login(client, csrf_headers, password="wrong-password")
     assert response.status_code == 401
@@ -94,7 +108,9 @@ async def test_login_wrong_password(client, csrf_headers):
 
 
 @pytest.mark.asyncio
-async def test_login_inactive_user_forbidden(client, csrf_headers, user_factory):
+async def test_login_inactive_user_forbidden(
+    client: httpx.AsyncClient, csrf_headers: dict[str, str], user_factory: UserFactory
+) -> None:
     await user_factory(
         "inactive@example.com", PASSWORD, UserRole.lawyer, is_active=False
     )
@@ -104,14 +120,16 @@ async def test_login_inactive_user_forbidden(client, csrf_headers, user_factory)
 
 
 @pytest.mark.asyncio
-async def test_me_without_session_401(client):
+async def test_me_without_session_401(client: httpx.AsyncClient) -> None:
     response = await client.get(ME)
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "SESSION_NOT_FOUND"
 
 
 @pytest.mark.asyncio
-async def test_error_message_localized_by_accept_language(client):
+async def test_error_message_localized_by_accept_language(
+    client: httpx.AsyncClient,
+) -> None:
     response = await client.get(ME, headers={"Accept-Language": "en-US,en;q=0.9"})
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "SESSION_NOT_FOUND"
@@ -121,7 +139,9 @@ async def test_error_message_localized_by_accept_language(client):
 
 
 @pytest.mark.asyncio
-async def test_me_with_valid_session(client, csrf_headers):
+async def test_me_with_valid_session(
+    client: httpx.AsyncClient, csrf_headers: dict[str, str]
+) -> None:
     await register(client, csrf_headers)
     await login(client, csrf_headers)
     response = await client.get(ME)
@@ -130,7 +150,9 @@ async def test_me_with_valid_session(client, csrf_headers):
 
 
 @pytest.mark.asyncio
-async def test_session_ttl_issued_and_sliding(client, csrf_headers, fake_redis):
+async def test_session_ttl_issued_and_sliding(
+    client: httpx.AsyncClient, csrf_headers: dict[str, str], fake_redis: FakeAsyncRedis
+) -> None:
     await register(client, csrf_headers)
     await login(client, csrf_headers)
     sid = client.cookies.get("sid")
@@ -148,15 +170,19 @@ async def test_session_ttl_issued_and_sliding(client, csrf_headers, fake_redis):
 
 @pytest.mark.asyncio
 async def test_hard_expire_returns_401_and_deletes_key(
-    client, csrf_headers, fake_redis
-):
+    client: httpx.AsyncClient,
+    csrf_headers: dict[str, str],
+    fake_redis: FakeAsyncRedis,
+) -> None:
     await register(client, csrf_headers)
     await login(client, csrf_headers)
     sid = client.cookies.get("sid")
     assert sid is not None
     key = session_key(sid)
 
-    payload = json.loads(await fake_redis.get(key))
+    raw = await fake_redis.get(key)
+    assert raw is not None
+    payload = json.loads(raw)
     payload["hard_expire_at"] = time.time() - 10
     await fake_redis.set(key, json.dumps(payload))
 
@@ -167,7 +193,9 @@ async def test_hard_expire_returns_401_and_deletes_key(
 
 
 @pytest.mark.asyncio
-async def test_corrupted_session_401_and_deleted(client, csrf_headers, fake_redis):
+async def test_corrupted_session_401_and_deleted(
+    client: httpx.AsyncClient, csrf_headers: dict[str, str], fake_redis: FakeAsyncRedis
+) -> None:
     await register(client, csrf_headers)
     await login(client, csrf_headers)
     sid = client.cookies.get("sid")
@@ -183,7 +211,9 @@ async def test_corrupted_session_401_and_deleted(client, csrf_headers, fake_redi
 
 
 @pytest.mark.asyncio
-async def test_logout_destroys_session_and_cookies(client, csrf_headers):
+async def test_logout_destroys_session_and_cookies(
+    client: httpx.AsyncClient, csrf_headers: dict[str, str]
+) -> None:
     await register(client, csrf_headers)
     login_response = await login(client, csrf_headers)
     csrf = login_response.json()["data"]["csrf_token"]

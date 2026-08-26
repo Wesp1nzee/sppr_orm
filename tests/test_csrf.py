@@ -37,7 +37,9 @@ async def _register_and_login(
 
 
 @pytest.mark.asyncio
-async def test_login_issues_session_bound_csrf(client, csrf_headers):
+async def test_login_issues_session_bound_csrf(
+    client: httpx.AsyncClient, csrf_headers: dict[str, str]
+) -> None:
     response = await _register_and_login(client, csrf_headers)
     assert response.status_code == 200
     sid = client.cookies.get("sid")
@@ -46,7 +48,9 @@ async def test_login_issues_session_bound_csrf(client, csrf_headers):
 
 
 @pytest.mark.asyncio
-async def test_csrf_token_endpoint_binds_to_current_session(client, csrf_headers):
+async def test_csrf_token_endpoint_binds_to_current_session(
+    client: httpx.AsyncClient, csrf_headers: dict[str, str]
+) -> None:
     await _register_and_login(client, csrf_headers)
     sid = client.cookies.get("sid")
     assert sid is not None
@@ -57,7 +61,9 @@ async def test_csrf_token_endpoint_binds_to_current_session(client, csrf_headers
 
 
 @pytest.mark.asyncio
-async def test_cookie_injection_rejected(client, csrf_headers):
+async def test_cookie_injection_rejected(
+    client: httpx.AsyncClient, csrf_headers: dict[str, str]
+) -> None:
     """Подмена cookie без валидного HMAC для текущего sid → 403.
 
     Атакующий подсовывает согласованную пару cookie == header, но токен
@@ -76,7 +82,9 @@ async def test_cookie_injection_rejected(client, csrf_headers):
 
 
 @pytest.mark.asyncio
-async def test_missing_csrf_header_rejected(client, csrf_headers):
+async def test_missing_csrf_header_rejected(
+    client: httpx.AsyncClient, csrf_headers: dict[str, str]
+) -> None:
     await client.get(CSRF_ENDPOINT)  # cookie есть, заголовка нет
     response = await client.post(
         REGISTER,
@@ -92,7 +100,9 @@ async def test_missing_csrf_header_rejected(client, csrf_headers):
 
 
 @pytest.mark.asyncio
-async def test_valid_session_bound_token_accepted(client, csrf_headers):
+async def test_valid_session_bound_token_accepted(
+    client: httpx.AsyncClient, csrf_headers: dict[str, str]
+) -> None:
     login_response = await _register_and_login(client, csrf_headers)
     token = login_response.json()["data"]["csrf_token"]
 

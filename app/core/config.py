@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     debug: bool = False
     api_v1_prefix: str = "/api/v1"
 
-    secret_key: str = "insecure-dev-key-change-me"
+    secret_key: str = "insecure-dev-key-change-me"  # noqa: S105 — dev-дефолт, в проде задаётся через SECRET_KEY
     csrf_cookie_name: str = "csrf_token"
     csrf_header_name: str = "X-CSRF-Token"
     csrf_exempt_paths: list[str] = ["/docs", "/redoc", "/openapi.json"]

@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-import enum
+from enum import StrEnum
 
 from app.auth.models import UserRole
 
@@ -17,7 +17,7 @@ RULES_VERSION = "1.0.0"
 TOTAL_CRITERIA = 14
 
 
-class CriterionStatus(str, enum.Enum):
+class CriterionStatus(StrEnum):
     """Статус прохождения критерия (ТЗ, раздел 8)."""
 
     PASSED = "passed"

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from typing import Any
 
 from app.auth.models import UserRole
 from app.checks.constants import PRIORITY_BY_ROLE, TOTAL_CRITERIA, CriterionStatus
@@ -11,7 +12,7 @@ from app.checks.rules.registry import RULES, evaluate_criteria
 
 
 def evaluate(
-    number: int, answers: dict, role: UserRole = UserRole.lawyer
+    number: int, answers: dict[str, Any], role: UserRole = UserRole.lawyer
 ) -> CriterionResult:
     rule = next(r for r in RULES if r.number == number)
     return rule.run(answers, role)
