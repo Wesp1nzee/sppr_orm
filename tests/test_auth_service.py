@@ -34,7 +34,7 @@ async def test_register_success_and_duplicate(session_factory, fake_redis):
         with pytest.raises(AppException) as exc_info:
             await service.register(_register_payload())
         assert exc_info.value.status_code == 409
-        assert exc_info.value.code.value == "CONFLICT"
+        assert exc_info.value.code.value == "EMAIL_ALREADY_REGISTERED"
 
 
 @pytest.mark.asyncio
@@ -44,7 +44,7 @@ async def test_register_admin_forbidden(session_factory, fake_redis):
         with pytest.raises(AppException) as exc_info:
             await service.register(_register_payload(role=UserRole.admin))
         assert exc_info.value.status_code == 403
-        assert exc_info.value.code.value == "FORBIDDEN"
+        assert exc_info.value.code.value == "ADMIN_SELF_REGISTRATION_FORBIDDEN"
 
 
 @pytest.mark.asyncio
@@ -56,10 +56,12 @@ async def test_authenticate_wrong_password_and_inactive(session_factory, fake_re
         with pytest.raises(AppException) as exc_info:
             await service.authenticate("svc@example.com", "wrong")
         assert exc_info.value.status_code == 401
+        assert exc_info.value.code.value == "INVALID_CREDENTIALS"
 
         with pytest.raises(AppException) as exc_info:
             await service.authenticate("svc@example.com", "password123")
         assert exc_info.value.status_code == 403
+        assert exc_info.value.code.value == "ACCOUNT_DEACTIVATED"
 
 
 @pytest.mark.asyncio

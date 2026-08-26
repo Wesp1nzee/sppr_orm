@@ -8,7 +8,7 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.core.exceptions import AppException
+from app.core.exceptions import AppException, ErrorCode
 from app.core.security import generate_token, hash_password, verify_password
 from app.models.user import User, UserRole
 from app.repositories.users import UserRepository
@@ -33,9 +33,9 @@ class AuthService:
     async def register(self, payload: RegisterRequest) -> User:
         existing = await self._users.get_by_email(payload.email)
         if existing is not None:
-            raise AppException.conflict("Пользователь с таким email уже зарегистрирован")
+            raise AppException(ErrorCode.EMAIL_ALREADY_REGISTERED)
         if payload.role is UserRole.admin:
-            raise AppException.forbidden("Самостоятельная регистрация администратора запрещена")
+            raise AppException(ErrorCode.ADMIN_SELF_REGISTRATION_FORBIDDEN)
 
         hashed = hash_password(payload.password)
         return await self._users.create(
@@ -48,9 +48,9 @@ class AuthService:
     async def authenticate(self, email: str, password: str) -> User:
         user = await self._users.get_by_email(email)
         if user is None or not verify_password(password, user.hashed_password):
-            raise AppException.unauthenticated("Неверный email или пароль")
+            raise AppException(ErrorCode.INVALID_CREDENTIALS)
         if not user.is_active:
-            raise AppException.forbidden("Учётная запись деактивирована")
+            raise AppException(ErrorCode.ACCOUNT_DEACTIVATED)
         return user
 
     async def create_session(self, user: User) -> str:

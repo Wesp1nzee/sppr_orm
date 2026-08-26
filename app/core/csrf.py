@@ -32,16 +32,10 @@ from starlette.responses import JSONResponse, Response
 from starlette.types import ASGIApp
 
 from app.core.config import get_settings
+from app.core.exceptions import ErrorCode
+from app.core.messages import DEFAULT_LOCALE, get_message, resolve_locale
 
 SAFE_METHODS: frozenset[str] = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})
-
-_CSRF_ERROR_BODY: dict = {
-    "error": {
-        "code": "CSRF_TOKEN_INVALID",
-        "message": "Неверный или отсутствующий CSRF-токен",
-        "details": [],
-    }
-}
 
 
 def generate_csrf_token(sid: str | None = None) -> str:
@@ -59,8 +53,17 @@ def _hmac_for_sid(secret_key: str, sid: str | None) -> str:
     ).hexdigest()
 
 
-def csrf_error_response() -> JSONResponse:
-    return JSONResponse(status_code=403, content=_CSRF_ERROR_BODY)
+def csrf_error_response(request: Request) -> JSONResponse:
+    """403 в формате api.md с локализованным сообщением CSRF_TOKEN_INVALID."""
+    locale = resolve_locale(request) if request is not None else DEFAULT_LOCALE
+    body = {
+        "error": {
+            "code": ErrorCode.CSRF_TOKEN_INVALID.value,
+            "message": get_message(ErrorCode.CSRF_TOKEN_INVALID, locale),
+            "details": [],
+        }
+    }
+    return JSONResponse(status_code=403, content=body)
 
 
 class CSRFMiddleware(BaseHTTPMiddleware):
@@ -94,13 +97,13 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         cookie_token = request.cookies.get(self._cookie_name)
         header_token = request.headers.get(self._header_name)
         if not cookie_token or not header_token:
-            return csrf_error_response()
+            return csrf_error_response(request)
 
         sid = request.cookies.get(self._session_cookie_name)
         expected = self._expected_token(sid)
         if not secrets.compare_digest(cookie_token, header_token) or not secrets.compare_digest(
             cookie_token, expected
         ):
-            return csrf_error_response()
+            return csrf_error_response(request)
 
         return await call_next(request)

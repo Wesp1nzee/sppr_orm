@@ -18,6 +18,7 @@ from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.csrf import CSRFMiddleware
 from app.core.exceptions import AppException, ErrorCode
+from app.core.messages import get_message, resolve_locale
 from app.schemas.common import ErrorBody, ErrorDetail, ErrorResponse
 
 logger = logging.getLogger("sppr_orm")
@@ -50,7 +51,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 def _register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppException)
     async def _app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
-        return _error_response(exc.status_code, exc.code.value, exc.message, exc.details)
+        message = get_message(exc.code, resolve_locale(request), **exc.format_kwargs)
+        return _error_response(exc.status_code, exc.code.value, message, exc.details)
 
     @app.exception_handler(RequestValidationError)
     async def _validation_exception_handler(
@@ -66,7 +68,10 @@ def _register_exception_handlers(app: FastAPI) -> None:
                 )
             )
         return _error_response(
-            400, ErrorCode.VALIDATION_ERROR.value, "Ошибка валидации запроса", details
+            400,
+            ErrorCode.VALIDATION_ERROR.value,
+            get_message(ErrorCode.VALIDATION_ERROR, resolve_locale(request)),
+            details,
         )
 
     @app.exception_handler(ResponseValidationError)
@@ -74,27 +79,40 @@ def _register_exception_handlers(app: FastAPI) -> None:
         request: Request, exc: ResponseValidationError
     ) -> JSONResponse:
         logger.error("Response validation error: %s", exc)
-        return _error_response(500, ErrorCode.INTERNAL_ERROR.value, "Внутренняя ошибка сервера")
+        return _error_response(
+            500,
+            ErrorCode.INTERNAL_ERROR.value,
+            get_message(ErrorCode.INTERNAL_ERROR, resolve_locale(request)),
+        )
 
     @app.exception_handler(StarletteHTTPException)
     async def _http_exception_handler(
         request: Request, exc: StarletteHTTPException
     ) -> JSONResponse:
-        mapping: dict[int, tuple[ErrorCode, str]] = {
-            401: (ErrorCode.UNAUTHENTICATED, "Не авторизован"),
-            403: (ErrorCode.FORBIDDEN, "Доступ запрещён"),
-            404: (ErrorCode.NOT_FOUND, "Ресурс не найден"),
-            405: (ErrorCode.METHOD_NOT_ALLOWED, "Метод не поддерживается"),
+        mapping: dict[int, ErrorCode] = {
+            401: ErrorCode.UNAUTHENTICATED,
+            403: ErrorCode.FORBIDDEN,
+            404: ErrorCode.NOT_FOUND,
+            405: ErrorCode.METHOD_NOT_ALLOWED,
         }
-        code, message = mapping.get(
-            exc.status_code, (ErrorCode.INTERNAL_ERROR, str(exc.detail))
+        code = mapping.get(exc.status_code)
+        if code is None:
+            # Немаппированный статус: прокидываем деталь как есть.
+            return _error_response(
+                exc.status_code, ErrorCode.INTERNAL_ERROR.value, str(exc.detail)
+            )
+        return _error_response(
+            exc.status_code, code.value, get_message(code, resolve_locale(request))
         )
-        return _error_response(exc.status_code, code.value, message)
 
     @app.exception_handler(Exception)
     async def _unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
-        return _error_response(500, ErrorCode.INTERNAL_ERROR.value, "Внутренняя ошибка сервера")
+        return _error_response(
+            500,
+            ErrorCode.INTERNAL_ERROR.value,
+            get_message(ErrorCode.INTERNAL_ERROR, resolve_locale(request)),
+        )
 
 
 def create_app() -> FastAPI:

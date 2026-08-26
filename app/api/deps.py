@@ -11,7 +11,7 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.core.exceptions import AppException
+from app.core.exceptions import AppException, ErrorCode
 from app.db.session import get_db
 from app.models.user import User, UserRole
 from app.repositories.users import UserRepository
@@ -47,23 +47,23 @@ async def get_current_user(
     """
     sid = request.cookies.get(settings.session_cookie_name)
     if not sid:
-        raise AppException.unauthenticated("Сессия не найдена, выполните вход")
+        raise AppException(ErrorCode.SESSION_NOT_FOUND)
 
     service = AuthService(db, redis)
     payload = await service.get_session_payload(sid)
     if payload is None:
-        raise AppException.unauthenticated("Сессия не найдена или истекла, выполните вход")
+        raise AppException(ErrorCode.SESSION_NOT_FOUND)
 
     try:
         user_id = uuid.UUID(str(payload["user_id"]))
     except (KeyError, TypeError, ValueError):
         await service.destroy_session(sid)
-        raise AppException.unauthenticated("Сессия повреждена, выполните вход")
+        raise AppException(ErrorCode.SESSION_CORRUPTED)
 
     user = await UserRepository(db).get_by_id(user_id)
     if user is None or not user.is_active:
         await service.destroy_session(sid)
-        raise AppException.unauthenticated("Пользователь не найден или деактивирован")
+        raise AppException(ErrorCode.USER_NOT_FOUND_OR_INACTIVE)
 
     # +30 мин от каждого аутентифицированного запроса.
     await service.refresh_session_ttl(sid)
@@ -78,7 +78,7 @@ def require_roles(*allowed: UserRole) -> Callable[[CurrentUser], Awaitable[User]
 
     async def checker(user: CurrentUser) -> User:
         if user.role not in allowed:
-            raise AppException.forbidden("Недостаточно прав для выполнения операции")
+            raise AppException(ErrorCode.INSUFFICIENT_PERMISSIONS)
         return user
 
     return checker

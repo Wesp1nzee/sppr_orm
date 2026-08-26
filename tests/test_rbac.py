@@ -40,7 +40,7 @@ async def test_lawyer_denied_admin_route(
 
     response = await client_with_admin_route.get(ADMIN_ONLY)
     assert response.status_code == 403
-    assert response.json()["error"]["code"] == "FORBIDDEN"
+    assert response.json()["error"]["code"] == "INSUFFICIENT_PERMISSIONS"
 
 
 @pytest.mark.asyncio

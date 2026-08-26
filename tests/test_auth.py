@@ -65,14 +65,14 @@ async def test_register_duplicate_email_conflict(client, csrf_headers):
     assert (await register(client, csrf_headers)).status_code == 201
     response = await register(client, csrf_headers)
     assert response.status_code == 409
-    assert response.json()["error"]["code"] == "CONFLICT"
+    assert response.json()["error"]["code"] == "EMAIL_ALREADY_REGISTERED"
 
 
 @pytest.mark.asyncio
 async def test_register_admin_forbidden(client, csrf_headers):
     response = await register(client, csrf_headers, role="admin")
     assert response.status_code == 403
-    assert response.json()["error"]["code"] == "FORBIDDEN"
+    assert response.json()["error"]["code"] == "ADMIN_SELF_REGISTRATION_FORBIDDEN"
 
 
 @pytest.mark.asyncio
@@ -90,7 +90,7 @@ async def test_login_wrong_password(client, csrf_headers):
     await register(client, csrf_headers)
     response = await login(client, csrf_headers, password="wrong-password")
     assert response.status_code == 401
-    assert response.json()["error"]["code"] == "UNAUTHENTICATED"
+    assert response.json()["error"]["code"] == "INVALID_CREDENTIALS"
 
 
 @pytest.mark.asyncio
@@ -100,14 +100,24 @@ async def test_login_inactive_user_forbidden(client, csrf_headers, user_factory)
     )
     response = await login(client, csrf_headers, email="inactive@example.com")
     assert response.status_code == 403
-    assert response.json()["error"]["code"] == "FORBIDDEN"
+    assert response.json()["error"]["code"] == "ACCOUNT_DEACTIVATED"
 
 
 @pytest.mark.asyncio
 async def test_me_without_session_401(client):
     response = await client.get(ME)
     assert response.status_code == 401
-    assert response.json()["error"]["code"] == "UNAUTHENTICATED"
+    assert response.json()["error"]["code"] == "SESSION_NOT_FOUND"
+
+
+@pytest.mark.asyncio
+async def test_error_message_localized_by_accept_language(client):
+    response = await client.get(ME, headers={"Accept-Language": "en-US,en;q=0.9"})
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "SESSION_NOT_FOUND"
+    assert response.json()["error"]["message"] == (
+        "Session not found or expired, please sign in"
+    )
 
 
 @pytest.mark.asyncio
@@ -150,6 +160,7 @@ async def test_hard_expire_returns_401_and_deletes_key(client, csrf_headers, fak
 
     response = await client.get(ME)
     assert response.status_code == 401
+    assert response.json()["error"]["code"] == "SESSION_NOT_FOUND"
     assert await fake_redis.exists(key) == 0
 
 
@@ -165,6 +176,7 @@ async def test_corrupted_session_401_and_deleted(client, csrf_headers, fake_redi
 
     response = await client.get(ME)
     assert response.status_code == 401
+    assert response.json()["error"]["code"] == "SESSION_NOT_FOUND"
     assert await fake_redis.exists(key) == 0
 
 
