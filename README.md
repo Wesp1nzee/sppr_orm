@@ -8,6 +8,7 @@
 - Alembic (async-миграции)
 - Redis (сессии, кэш)
 - Auth: сессии в Redis + HttpOnly cookie `sid` + CSRF double-submit cookie (без JWT)
+- Пароли: Argon2id (pwdlib) для новых хэшей; bcrypt — legacy-схема верификации старых хэшей
 
 ## Быстрый старт
 

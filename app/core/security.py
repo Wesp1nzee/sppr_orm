@@ -1,25 +1,35 @@
-"""Криптографические примитивы: хэширование паролей, генерация токенов."""
+"""Криптографические примитивы: хэширование паролей, генерация токенов.
+
+Пароли: Argon2id (pwdlib) для новых хэшей; bcrypt оставлен как legacy-схема
+для верификации старых хэшей в БД (до их перехэширования при следующем входе).
+"""
 
 from __future__ import annotations
 
 import secrets
 
-from passlib.context import CryptContext  # type: ignore[import-untyped]
+from pwdlib import PasswordHash
+from pwdlib.exceptions import UnknownHashError
+from pwdlib.hashers.argon2 import Argon2Hasher
+from pwdlib.hashers.bcrypt import BcryptHasher
 
-# bcrypt (пин 4.0.1 — см. pyproject: совместимость passlib 1.7.4 с bcrypt>=4.1)
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Argon2id — основная схема; bcrypt — верификация legacy-хэшей.
+_password_hash = PasswordHash((Argon2Hasher(), BcryptHasher()))
 
 
 def hash_password(password: str) -> str:
-    """Возвращает bcrypt-хэш пароля."""
-    return _pwd_context.hash(password)
+    """Возвращает Argon2id-хэш пароля."""
+    return _password_hash.hash(password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Проверяет пароль против хэша. Возвращает False при неверном/битом хэше."""
+    """Проверяет пароль против хэша (Argon2id или legacy-bcrypt).
+
+    Возвращает False при неверном пароле или нераспознанном/битом хэше.
+    """
     try:
-        return _pwd_context.verify(plain_password, hashed_password)
-    except ValueError:
+        return _password_hash.verify(plain_password, hashed_password)
+    except (TypeError, ValueError, UnknownHashError):
         return False
 
 
