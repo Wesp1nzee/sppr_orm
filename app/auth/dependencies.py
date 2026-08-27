@@ -1,9 +1,3 @@
-"""FastAPI-зависимости домена auth: текущий пользователь, RBAC.
-
-Общие зависимости БД/Redis (``DbSession``, ``RedisClient``) живут в
-``app/core/deps.py`` — они пригодятся и другим доменам.
-"""
-
 import uuid
 from collections.abc import Awaitable, Callable
 from typing import Annotated

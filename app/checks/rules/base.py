@@ -1,4 +1,3 @@
-"""Базовые типы правил проверки и общий интерфейс критерия."""
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field

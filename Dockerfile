@@ -15,6 +15,10 @@ RUN uv sync --frozen --no-dev
 
 FROM python:3.14-slim AS runtime
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN useradd --create-home --uid 1000 app
 WORKDIR /app
 

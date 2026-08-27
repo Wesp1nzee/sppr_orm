@@ -96,6 +96,22 @@ MESSAGES: dict[ErrorCode, dict[str, str]] = {
         "ru": "Документ с таким кодом уже существует",
         "en": "A document with this code already exists",
     },
+    ErrorCode.DOCUMENT_NOT_FOUND: {
+        "ru": "Документ не найден",
+        "en": "Document not found",
+    },
+    ErrorCode.DOCUMENT_TYPE_NOT_ALLOWED_FOR_ROLE: {
+        "ru": "Данный тип документа недоступен для вашей роли",
+        "en": "This document type is not allowed for your role",
+    },
+    ErrorCode.DOCUMENT_ALREADY_FINALIZED: {
+        "ru": "Документ уже финализирован и недоступен для редактирования",
+        "en": "The document is already finalized and cannot be edited",
+    },
+    ErrorCode.DOCUMENT_TEMPLATE_MISSING_FIELDS: {
+        "ru": "Не заполнены обязательные поля шаблона: {fields}",
+        "en": "Required template fields are missing: {fields}",
+    },
 }
 
 

@@ -100,8 +100,6 @@ class CheckService:
         total = await self._repo.count(user_id=user_id)
         return [self._to_list_item(check) for check in checks], total
 
-    # --- Преобразование в ответные схемы ------------------------------------
-
     def _to_out(self, check: Check) -> CheckOut:
         results = _sorted_results(check)
         return CheckOut(
