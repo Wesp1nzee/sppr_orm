@@ -1,7 +1,5 @@
 """Alembic environment: async engine, URL из Settings, metadata из Base."""
 
-from __future__ import annotations
-
 import asyncio
 import sys
 from logging.config import fileConfig
@@ -19,6 +17,7 @@ from app.auth.models import User  # noqa: F401 — регистрирует та
 from app.checks.models import Check, CriterionResult  # noqa: F401
 from app.core.config import get_settings
 from app.db.base import Base
+from app.knowledge_base.models import NormativeDocument  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:
