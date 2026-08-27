@@ -33,7 +33,7 @@ class NormativeDocumentRepositoryProtocol(Protocol):
     async def get_history(self, code: str) -> list[NormativeDocument]: ...
 
     async def create_new_version(
-        self, *, code: str, admin_id: uuid.UUID, **fields: Any
+        self, *, code: str, admin_id: uuid.UUID | None, **fields: Any
     ) -> NormativeDocument: ...
 
 
@@ -92,7 +92,7 @@ class NormativeDocumentRepository:
         return list(result.scalars().all())
 
     async def create_new_version(
-        self, *, code: str, admin_id: uuid.UUID, **fields: Any
+        self, *, code: str, admin_id: uuid.UUID | None, **fields: Any
     ) -> NormativeDocument:
         """Создаёт новую версию: предыдущие теряют ``is_current``, версия +1."""
         stmt = select(func.max(NormativeDocument.version)).where(

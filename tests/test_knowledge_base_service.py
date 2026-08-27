@@ -55,7 +55,7 @@ class FakeNormativeDocumentRepository:
         return sorted(self._docs.get(code, []), key=lambda d: d.version, reverse=True)
 
     async def create_new_version(
-        self, *, code: str, admin_id: uuid.UUID, **fields: Any
+        self, *, code: str, admin_id: uuid.UUID | None, **fields: Any
     ) -> NormativeDocument:
         del admin_id
         history = self._docs.setdefault(code, [])
