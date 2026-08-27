@@ -1,16 +1,14 @@
 """Критерий 13: участие защитника при ограничении свободы."""
 
-from __future__ import annotations
-
 from typing import Any, ClassVar
 
-from app.checks.constants import FZ_ORD, UPK, CriterionStatus
+from app.checks.constants import CriterionStatus
 from app.checks.rules.base import CriterionRule, RuleOutput, get_bool, get_str
 
 
 class Criterion13(CriterionRule):
     number = 13
-    legal_references: ClassVar[list[str]] = [f"{FZ_ORD}, ст. 8", UPK]
+    legal_references: ClassVar[list[str]] = ["fz-ord-art8", "upk"]
 
     #: ОРМ, при которых участие защитника не требуется.
     EXEMPT_ORM_TYPES: frozenset[str] = frozenset({"проверочная закупка", "досмотр"})

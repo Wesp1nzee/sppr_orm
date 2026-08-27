@@ -1,7 +1,5 @@
 """Модели данных домена «Проверка по 14 критериям» (ТЗ, раздел 6)."""
 
-from __future__ import annotations
-
 import uuid
 from typing import Any
 
@@ -70,7 +68,7 @@ class CriterionResult(Base):
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     comment: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    legal_references: Mapped[list[str]] = mapped_column(
+    legal_references: Mapped[list[dict[str, Any]]] = mapped_column(
         JSONB, nullable=False, default=list
     )
     recommendations: Mapped[list[str]] = mapped_column(

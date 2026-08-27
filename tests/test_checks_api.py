@@ -1,7 +1,5 @@
 """Интеграционные тесты API домена «Проверки» (ТЗ, раздел 13)."""
 
-from __future__ import annotations
-
 import uuid
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -269,3 +267,58 @@ async def test_create_check_validation_error(
     )
     assert response.status_code == 400
     assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+@pytest.mark.asyncio
+async def test_legal_references_are_objects_with_stub_for_missing(
+    client: httpx.AsyncClient, user_factory: UserFactory
+) -> None:
+    await user_factory("refs@example.com", PASSWORD, UserRole.lawyer)
+    headers = await _login(client, "refs@example.com")
+
+    response = await _create_check(client, headers)
+    data = response.json()["data"]
+
+    for result in data["results"]:
+        for ref in result["legal_references"]:
+            assert ref["code"]
+            # В тестовой БД база знаний пуста → ссылки резолвятся в заглушку.
+            assert ref["summary"] == "[источник не найден в базе знаний]"
+            assert ref.get("title") is None
+            assert ref.get("source_url") is None
+
+
+@pytest.mark.asyncio
+async def test_legal_references_resolve_from_knowledge_base(
+    client: httpx.AsyncClient, user_factory: UserFactory
+) -> None:
+    await user_factory("admin@example.com", PASSWORD, UserRole.admin)
+    await user_factory("lawyer@example.com", PASSWORD, UserRole.lawyer)
+
+    admin_headers = await _login(client, "admin@example.com")
+    created = await client.post(
+        "/api/v1/knowledge-base/documents",
+        json={
+            "source_type": "federal_law",
+            "code": "fz-ord-art7",
+            "title": "ФЗ «Об ОРД», ст. 7",
+            "full_text": "Основания для проведения ОРМ...",
+            "summary": "Основания для проведения ОРМ.",
+        },
+        headers=admin_headers,
+    )
+    assert created.status_code == 201
+
+    lawyer_headers = await _login(client, "lawyer@example.com")
+    response = await _create_check(client, lawyer_headers)
+    data = response.json()["data"]
+
+    criterion_1 = next(r for r in data["results"] if r["criterion_number"] == 1)
+    ref = next(r for r in criterion_1["legal_references"] if r["code"] == "fz-ord-art7")
+    assert ref["title"] == "ФЗ «Об ОРД», ст. 7"
+    assert ref["summary"] == "Основания для проведения ОРМ."
+
+    unresolved = next(
+        r for r in criterion_1["legal_references"] if r["code"] == "fz-ord-art8"
+    )
+    assert unresolved.get("title") is None

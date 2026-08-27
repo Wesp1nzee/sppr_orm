@@ -1,7 +1,5 @@
 """Unit-тесты правил 14 критериев проверки законности ОРМ."""
 
-from __future__ import annotations
-
 import time
 from typing import Any
 
@@ -331,3 +329,21 @@ def test_evaluate_all_is_fast() -> None:
     elapsed = time.perf_counter() - started
     assert len(results) == TOTAL_CRITERIA
     assert elapsed < 2.0
+
+
+def test_legal_references_are_codes() -> None:
+    codes = {ref for rule in RULES for ref in rule.legal_references}
+    assert codes == {
+        "fz-ord-art5",
+        "fz-ord-art5-ch4",
+        "fz-ord-art6",
+        "fz-ord-art7",
+        "fz-ord-art8",
+        "fz-ord-art9",
+        "fz-ord-art11",
+        "fz-ord-art12",
+        "upk-art89",
+        "upk",
+        "koap",
+        "plenum-vs-2009-1",
+    }

@@ -1,16 +1,14 @@
 """Критерий 2: судебное решение при ограничении конституционных прав."""
 
-from __future__ import annotations
-
 from typing import Any, ClassVar
 
-from app.checks.constants import FZ_ORD, CriterionStatus
+from app.checks.constants import CriterionStatus
 from app.checks.rules.base import CriterionRule, RuleOutput, get_bool
 
 
 class Criterion02(CriterionRule):
     number = 2
-    legal_references: ClassVar[list[str]] = [f"{FZ_ORD}, ст. 8", f"{FZ_ORD}, ст. 9"]
+    legal_references: ClassVar[list[str]] = ["fz-ord-art8", "fz-ord-art9"]
 
     def evaluate(self, answers: dict[str, Any]) -> RuleOutput:
         limits_rights = get_bool(answers, "limits_constitutional_rights")

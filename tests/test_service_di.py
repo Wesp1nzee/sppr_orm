@@ -1,9 +1,8 @@
 """Тесты DI: сервисы используют подставленный (in-memory) репозиторий."""
 
-from __future__ import annotations
-
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
 import pytest
 from fakeredis import FakeAsyncRedis
@@ -15,6 +14,9 @@ from app.checks.models import Check
 from app.checks.schemas import CheckCreateRequest
 from app.checks.service import CheckService
 from app.core.exceptions import AppException
+from app.knowledge_base.models import NormativeDocument, NormativeSourceType
+from app.knowledge_base.repository import NormativeDocumentRepositoryProtocol
+from app.knowledge_base.service import KnowledgeBaseService
 
 
 class FakeUserRepository:
@@ -81,6 +83,39 @@ class FakeCheckRepository:
         return checks
 
 
+class FakeNormativeDocumentRepository(NormativeDocumentRepositoryProtocol):
+    """In-memory реализация ``NormativeDocumentRepositoryProtocol`` (пустая)."""
+
+    async def get_current_by_code(self, code: str) -> NormativeDocument | None:
+        return None
+
+    async def get_current_by_codes(self, codes: list[str]) -> list[NormativeDocument]:
+        return []
+
+    async def list_current(
+        self,
+        *,
+        source_type: NormativeSourceType | None,
+        page: int,
+        per_page: int,
+    ) -> list[NormativeDocument]:
+        del source_type, page, per_page
+        return []
+
+    async def count_current(self, *, source_type: NormativeSourceType | None) -> int:
+        del source_type
+        return 0
+
+    async def get_history(self, code: str) -> list[NormativeDocument]:
+        del code
+        return []
+
+    async def create_new_version(
+        self, *, code: str, admin_id: uuid.UUID | None, **fields: Any
+    ) -> NormativeDocument:
+        raise NotImplementedError
+
+
 @pytest.mark.asyncio
 async def test_auth_service_uses_injected_repository(
     fake_redis: FakeAsyncRedis,
@@ -106,7 +141,11 @@ async def test_check_service_uses_injected_repository(
     fake_redis: FakeAsyncRedis,
 ) -> None:
     fake = FakeCheckRepository()
-    service = CheckService(session=None, repo=fake)  # type: ignore[arg-type]
+    kb = KnowledgeBaseService(
+        session=None,  # type: ignore[arg-type]
+        repo=FakeNormativeDocumentRepository(),
+    )
+    service = CheckService(session=None, repo=fake, kb=kb)  # type: ignore[arg-type]
 
     user = User(
         email="owner@example.com",
@@ -121,3 +160,5 @@ async def test_check_service_uses_injected_repository(
     assert result.id in fake._checks
     assert result.status == "completed"
     assert result.summary.total == 14
+    assert result.results[0].legal_references
+    assert result.results[0].legal_references[0].code.startswith("fz-ord-")

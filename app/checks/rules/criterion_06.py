@@ -1,16 +1,14 @@
 """Критерий 6: обследование жилого помещения."""
 
-from __future__ import annotations
-
 from typing import Any, ClassVar
 
-from app.checks.constants import FZ_ORD, CriterionStatus
+from app.checks.constants import CriterionStatus
 from app.checks.rules.base import CriterionRule, RuleOutput, get_bool, get_str
 
 
 class Criterion06(CriterionRule):
     number = 6
-    legal_references: ClassVar[list[str]] = [f"{FZ_ORD}, ст. 8", f"{FZ_ORD}, ст. 9"]
+    legal_references: ClassVar[list[str]] = ["fz-ord-art8", "fz-ord-art9"]
 
     def evaluate(self, answers: dict[str, Any]) -> RuleOutput:
         premises_type = (get_str(answers, "premises_type") or "").lower()

@@ -1,18 +1,14 @@
 """Критерий 14: законность задержания/удержания."""
 
-from __future__ import annotations
-
 from typing import Any, ClassVar
 
-from app.checks.constants import FZ_ORD, UPK, CriterionStatus
+from app.checks.constants import CriterionStatus
 from app.checks.rules.base import CriterionRule, RuleOutput, get_bool, get_str
-
-KOAP = "КоАП РФ"
 
 
 class Criterion14(CriterionRule):
     number = 14
-    legal_references: ClassVar[list[str]] = [f"{FZ_ORD}, ст. 6", UPK, KOAP]
+    legal_references: ClassVar[list[str]] = ["fz-ord-art6", "upk", "koap"]
 
     def evaluate(self, answers: dict[str, Any]) -> RuleOutput:
         detention_basis = get_str(answers, "detention_basis")

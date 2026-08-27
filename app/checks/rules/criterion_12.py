@@ -1,16 +1,14 @@
 """Критерий 12: право на истребование сведений о себе."""
 
-from __future__ import annotations
-
 from typing import Any, ClassVar
 
-from app.checks.constants import FZ_ORD, CriterionStatus
+from app.checks.constants import CriterionStatus
 from app.checks.rules.base import CriterionRule, RuleOutput, get_bool
 
 
 class Criterion12(CriterionRule):
     number = 12
-    legal_references: ClassVar[list[str]] = [f"{FZ_ORD}, ст. 5, ч. 4"]
+    legal_references: ClassVar[list[str]] = ["fz-ord-art5-ch4"]
 
     def evaluate(self, answers: dict[str, Any]) -> RuleOutput:
         guilt_not_established = get_bool(answers, "guilt_not_established")

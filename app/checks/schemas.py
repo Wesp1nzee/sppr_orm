@@ -1,7 +1,5 @@
 """Pydantic-схемы домена «Проверка по 14 критериям» (ТЗ, разделы 7-8)."""
 
-from __future__ import annotations
-
 import uuid
 from datetime import datetime
 from typing import Any
@@ -9,6 +7,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from app.checks.constants import CriterionStatus
+from app.knowledge_base.schemas import NormativeReferenceOut
 
 
 class CriterionResultOut(BaseModel):
@@ -18,7 +17,7 @@ class CriterionResultOut(BaseModel):
     title: str
     status: CriterionStatus
     comment: str
-    legal_references: list[str]
+    legal_references: list[NormativeReferenceOut]
     recommendations: list[str]
     priority_for_role: bool
 

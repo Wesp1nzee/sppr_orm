@@ -1,16 +1,14 @@
 """Критерий 5: отсутствие признаков провокации."""
 
-from __future__ import annotations
-
 from typing import Any, ClassVar
 
-from app.checks.constants import FZ_ORD, PLENUM_2009, CriterionStatus
+from app.checks.constants import CriterionStatus
 from app.checks.rules.base import CriterionRule, RuleOutput, get_bool
 
 
 class Criterion05(CriterionRule):
     number = 5
-    legal_references: ClassVar[list[str]] = [f"{FZ_ORD}, ст. 8", PLENUM_2009]
+    legal_references: ClassVar[list[str]] = ["fz-ord-art8", "plenum-vs-2009-1"]
 
     def evaluate(self, answers: dict[str, Any]) -> RuleOutput:
         coercion = get_bool(answers, "coercion")

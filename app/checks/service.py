@@ -1,9 +1,8 @@
 """Бизнес-логика домена «Проверки»: запуск, чтение, список, доступ."""
 
-from __future__ import annotations
-
 import uuid
 from dataclasses import dataclass
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,8 +21,12 @@ from app.checks.schemas import (
 from app.core.events import EventBus, get_event_bus
 from app.core.exceptions import AppException, ErrorCode
 from app.core.pagination import PageParams
+from app.knowledge_base.schemas import NormativeDocumentOut, NormativeReferenceOut
+from app.knowledge_base.service import KnowledgeBaseService
 
 STATUS_COMPLETED = "completed"
+
+MISSING_REFERENCE_SUMMARY = "[источник не найден в базе знаний]"
 
 
 @dataclass(frozen=True)
@@ -37,15 +40,18 @@ class CheckService:
         self,
         session: AsyncSession,
         repo: CheckRepositoryProtocol | None = None,
+        kb: KnowledgeBaseService | None = None,
         events: EventBus | None = None,
     ) -> None:
         self._session = session
         self._repo = repo or CheckRepository(session)
+        self._kb = kb or KnowledgeBaseService(session)
         self._events = events or get_event_bus()
 
     async def create(self, user: User, payload: CheckCreateRequest) -> CheckOut:
         """Запускает проверку по 14 критериям и сохраняет её в БД."""
         domain_results = evaluate_criteria(user.role, payload.answers)
+        norm_map = await self._kb.get_by_codes_map(_collect_codes(domain_results))
 
         check = Check(
             user_id=user.id,
@@ -62,7 +68,9 @@ class CheckService:
                     status=result.status.value,
                     title=result.title,
                     comment=result.comment,
-                    legal_references=result.legal_references,
+                    legal_references=_resolve_references(
+                        result.legal_references, norm_map
+                    ),
                     recommendations=result.recommendations,
                     priority_for_role=result.priority_for_role,
                 )
@@ -138,13 +146,46 @@ def _priority_numbers(results: list[CriterionResult]) -> list[int]:
     return [r.criterion_number for r in results if r.priority_for_role]
 
 
+def _collect_codes(results: list[Any]) -> list[str]:
+    """Собирает уникальные коды норм, на которые ссылаются результаты правил."""
+    return sorted({code for r in results for code in r.legal_references})
+
+
+def _resolve_references(
+    codes: list[str], norm_map: dict[str, NormativeDocumentOut]
+) -> list[dict[str, Any]]:
+    """Резолвит коды в снимок ссылок; отсутствующие коды — заглушка."""
+    refs: list[dict[str, Any]] = []
+    for code in codes:
+        doc = norm_map.get(code)
+        if doc is None:
+            refs.append(
+                {
+                    "code": code,
+                    "title": None,
+                    "summary": MISSING_REFERENCE_SUMMARY,
+                    "source_url": None,
+                }
+            )
+        else:
+            refs.append(
+                {
+                    "code": code,
+                    "title": doc.title,
+                    "summary": doc.summary,
+                    "source_url": doc.source_url,
+                }
+            )
+    return refs
+
+
 def _result_out(row: CriterionResult) -> CriterionResultOut:
     return CriterionResultOut(
         criterion_number=row.criterion_number,
         title=row.title,
         status=CriterionStatus(row.status),
         comment=row.comment,
-        legal_references=row.legal_references,
+        legal_references=[NormativeReferenceOut(**ref) for ref in row.legal_references],
         recommendations=row.recommendations,
         priority_for_role=row.priority_for_role,
     )
