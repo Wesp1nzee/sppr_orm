@@ -1,7 +1,5 @@
 """Тесты rate limiting на аутентификационных эндпоинтах (защита от брутфорса)."""
 
-from __future__ import annotations
-
 import httpx
 import pytest
 

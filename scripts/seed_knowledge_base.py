@@ -1,12 +1,8 @@
 """
-Идемпотентный скрипт загрузки базы знаний (ТЗ, раздел 3.3).
+Идемпотентный скрипт загрузки базы знаний
 
 Загружает: 24 определения КС РФ, статьи ФЗ «Об ОРД» и УПК РФ, постановление
-Пленума ВС РФ № 1 от 10.02.2009. При повторном запуске существующие коды
-пропускаются (проверка по ``code``) — дубликаты не создаются.
-
-Полные тексты определений КС РФ — контентная задача юристов-экспертов и
-подгружаются отдельно (``full_text = summary`` до наполнения).
+Пленума ВС РФ № 1 от 10.02.2009.
 """
 
 import argparse
@@ -15,7 +11,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.models import User  # noqa: F401 — регистрирует таблицу users (FK)
+from app.auth.models import User  # noqa: F401 регистрирует таблицу users (FK)
 from app.db.session import async_session_factory
 from app.knowledge_base.models import NormativeSourceType
 from app.knowledge_base.repository import NormativeDocumentRepository
@@ -28,7 +24,7 @@ def _todo(number: str) -> str:
     return f"[TODO: требует наполнения юристом-экспертом, {number}]"
 
 
-#: Номера определений КС РФ (Приложение А ТЗ). Код формируется латиницей.
+# Номера определений КС РФ
 KS_RULING_NUMBERS = [
     "86-О",
     "345-О",

@@ -1,7 +1,5 @@
 """Unit-тесты AuthService: правила регистрации и управление сессиями."""
 
-from __future__ import annotations
-
 import json
 import time
 from collections.abc import Awaitable, Callable

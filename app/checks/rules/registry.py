@@ -1,7 +1,3 @@
-"""Реестр правил 14 критериев и точка запуска оценки."""
-
-from __future__ import annotations
-
 from typing import Any
 
 from app.auth.models import UserRole
@@ -55,6 +51,6 @@ def evaluate_criteria(
     return results
 
 
-assert len(RULES) == TOTAL_CRITERIA, "количество правил должно совпадать с ТЗ"  # noqa: S101
+assert len(RULES) == TOTAL_CRITERIA, "количество правил должно быть 14"  # noqa: S101
 
 __all__ = ["RULES", "evaluate_criteria"]

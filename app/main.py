@@ -1,9 +1,5 @@
-"""FastAPI application factory: CORS, CSRF, exception handlers, lifespan."""
-
-from __future__ import annotations
-
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -40,7 +36,7 @@ def _error_response(
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     setup_audit_subscribers(get_event_bus())
     app.state.redis = redis_from_url(settings.redis_url, decode_responses=True)
     try:
@@ -102,7 +98,6 @@ def _register_exception_handlers(app: FastAPI) -> None:
         }
         code = mapping.get(exc.status_code)
         if code is None:
-            # Немаппированный статус: прокидываем деталь как есть.
             return _error_response(
                 exc.status_code, ErrorCode.INTERNAL_ERROR.value, str(exc.detail)
             )

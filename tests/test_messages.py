@@ -1,7 +1,5 @@
 """Тесты каталога сообщений и резолва локали."""
 
-from __future__ import annotations
-
 from app.core.exceptions import ErrorCode
 from app.core.messages import DEFAULT_LOCALE, get_message
 

@@ -4,8 +4,6 @@
 для верификации старых хэшей в БД (до их перехэширования при следующем входе).
 """
 
-from __future__ import annotations
-
 import secrets
 
 from pwdlib import PasswordHash

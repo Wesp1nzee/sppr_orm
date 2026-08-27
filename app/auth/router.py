@@ -1,7 +1,5 @@
 """Эндпоинты аутентификации (api.md, раздел 2.2)."""
 
-from __future__ import annotations
-
 from fastapi import Depends, Request, Response, status
 
 from app.auth.dependencies import CurrentUser
@@ -27,7 +25,7 @@ router = ApiRouter(prefix="/auth", tags=["auth"])
 
 
 def _set_session_cookie(response: Response, sid: str) -> None:
-    """sid: HttpOnly; Secure; SameSite=Lax; Max-Age=1800 (api.md, 2.1)."""
+    """sid: HttpOnly; Secure; SameSite=Lax; Max-Age=1800"""
     response.set_cookie(
         key=settings.session_cookie_name,
         value=sid,

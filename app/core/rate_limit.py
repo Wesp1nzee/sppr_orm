@@ -4,8 +4,6 @@
 поэтому работает при нескольких инстансах приложения (в отличие от in-memory).
 """
 
-from __future__ import annotations
-
 from collections.abc import Awaitable, Callable
 
 from fastapi import Request

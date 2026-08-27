@@ -1,5 +1,3 @@
-"""Модели данных домена «База знаний» (ТЗ, раздел 3.3)."""
-
 import uuid
 from enum import StrEnum
 from typing import Any

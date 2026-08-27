@@ -1,7 +1,5 @@
 """ApiRouter: дефолты для всех роутов API (envelope без None-полей)."""
 
-from __future__ import annotations
-
 from typing import Any
 
 from fastapi import APIRouter

@@ -9,8 +9,6 @@ Redis: fakeredis.
 ``app.state.redis`` — работает только override).
 """
 
-from __future__ import annotations
-
 from collections.abc import AsyncIterator, Awaitable, Callable
 
 import httpx

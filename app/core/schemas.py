@@ -4,8 +4,6 @@
 Ошибка: {"error": {"code", "message", "details": [{"field", "issue"}]}}
 """
 
-from __future__ import annotations
-
 from typing import TypeVar
 
 from pydantic import BaseModel, Field

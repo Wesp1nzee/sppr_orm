@@ -1,7 +1,5 @@
 """Параметры пагинации из query-string (api.md, раздел 1.3)."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Annotated
 

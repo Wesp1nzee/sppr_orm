@@ -1,7 +1,5 @@
 """Тесты хэширования паролей: Argon2id (новая схема) + legacy-bcrypt."""
 
-from __future__ import annotations
-
 from app.core.security import hash_password, verify_password
 
 # bcrypt-хэш пароля "legacy-password" (формат passlib 1.7.4, bcrypt 4.0.1) —

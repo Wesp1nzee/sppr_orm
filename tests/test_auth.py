@@ -1,7 +1,5 @@
 """Интеграционные тесты auth-флоу: регистрация, логин, logout, сессии."""
 
-from __future__ import annotations
-
 import json
 import time
 from collections.abc import Awaitable, Callable

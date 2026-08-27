@@ -1,7 +1,5 @@
 """Тесты подписанного double-submit CSRF: токен привязан к sid сессии."""
 
-from __future__ import annotations
-
 import httpx
 import pytest
 

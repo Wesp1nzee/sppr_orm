@@ -1,7 +1,3 @@
-"""Общие FastAPI-зависимости: БД-сессия, Redis-клиент."""
-
-from __future__ import annotations
-
 from typing import Annotated, cast
 
 from fastapi import Depends, Request

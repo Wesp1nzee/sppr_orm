@@ -1,7 +1,5 @@
 """Pydantic-схемы модуля аутентификации (api.md, раздел 2)."""
 
-from __future__ import annotations
-
 import uuid
 from datetime import datetime
 

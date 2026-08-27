@@ -5,8 +5,6 @@
 в ``lifespan`` приложения и обрабатывают события асинхронно.
 """
 
-from __future__ import annotations
-
 import logging
 from collections.abc import Awaitable, Callable
 from functools import lru_cache

@@ -1,7 +1,5 @@
 """Репозиторий домена «Проверки»: чистые запросы к БД."""
 
-from __future__ import annotations
-
 import uuid
 from typing import Any, Protocol
 

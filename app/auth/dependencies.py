@@ -4,13 +4,12 @@
 ``app/core/deps.py`` — они пригодятся и другим доменам.
 """
 
-from __future__ import annotations
-
 import uuid
 from collections.abc import Awaitable, Callable
 from typing import Annotated
 
-from fastapi import Depends, Request
+from fastapi import Depends, Security
+from fastapi.security import APIKeyCookie
 
 from app.auth.models import User, UserRole
 from app.auth.repository import UserRepository
@@ -21,11 +20,17 @@ from app.core.exceptions import AppException, ErrorCode
 
 settings = get_settings()
 
+session_scheme = APIKeyCookie(
+    name=settings.session_cookie_name,
+    description="Сессионный cookie, выдаваемый при входе через /auth/login",
+    auto_error=False,
+)
+
 
 async def get_current_user(
-    request: Request,
     db: DbSession,
     redis: RedisClient,
+    sid: str | None = Security(session_scheme),
 ) -> User:
     """Достаёт пользователя из Redis-сессии по cookie ``sid``.
 
@@ -38,7 +43,6 @@ async def get_current_user(
     ``AuthService.get_session_payload``; здесь только пользовательская
     логика поверх её результата.
     """
-    sid = request.cookies.get(settings.session_cookie_name)
     if not sid:
         raise AppException(ErrorCode.SESSION_NOT_FOUND)
 

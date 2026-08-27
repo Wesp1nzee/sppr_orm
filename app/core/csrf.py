@@ -20,8 +20,6 @@ HMAC для чужого ``sid`` — ``secret_key`` ему неизвестен.
 double-submit, т.к. привязываться к сессии ещё не к чему.
 """
 
-from __future__ import annotations
-
 import hashlib
 import hmac
 import secrets

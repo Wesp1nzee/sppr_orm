@@ -1,7 +1,5 @@
 """Тесты RBAC-цепочки: require_roles поверх get_current_user."""
 
-from __future__ import annotations
-
 from collections.abc import Awaitable, Callable
 from typing import Annotated
 
