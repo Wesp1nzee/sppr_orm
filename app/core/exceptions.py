@@ -1,7 +1,5 @@
 """Domain exceptions and the error-code catalogue from api.md."""
 
-from __future__ import annotations
-
 from enum import StrEnum
 
 from app.core.schemas import ErrorDetail
@@ -33,6 +31,10 @@ class ErrorCode(StrEnum):
     # Специфичные коды домена checks.
     CHECK_NOT_FOUND = "CHECK_NOT_FOUND"
 
+    # Специфичные коды домена knowledge_base.
+    NORMATIVE_DOCUMENT_NOT_FOUND = "NORMATIVE_DOCUMENT_NOT_FOUND"
+    NORMATIVE_DOCUMENT_CODE_CONFLICT = "NORMATIVE_DOCUMENT_CODE_CONFLICT"
+
 
 #: HTTP-статус по умолчанию для каждого кода.
 _DEFAULT_STATUS: dict[ErrorCode, int] = {
@@ -54,6 +56,8 @@ _DEFAULT_STATUS: dict[ErrorCode, int] = {
     ErrorCode.USER_NOT_FOUND_OR_INACTIVE: 401,
     ErrorCode.INSUFFICIENT_PERMISSIONS: 403,
     ErrorCode.CHECK_NOT_FOUND: 404,
+    ErrorCode.NORMATIVE_DOCUMENT_NOT_FOUND: 404,
+    ErrorCode.NORMATIVE_DOCUMENT_CODE_CONFLICT: 409,
 }
 
 

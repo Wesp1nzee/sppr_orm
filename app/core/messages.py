@@ -8,8 +8,6 @@
 код приложения менять не требуется.
 """
 
-from __future__ import annotations
-
 from starlette.requests import Request
 
 from app.core.exceptions import ErrorCode
@@ -89,6 +87,14 @@ MESSAGES: dict[ErrorCode, dict[str, str]] = {
     ErrorCode.CHECK_NOT_FOUND: {
         "ru": "Проверка не найдена",
         "en": "Check not found",
+    },
+    ErrorCode.NORMATIVE_DOCUMENT_NOT_FOUND: {
+        "ru": "Документ базы знаний не найден",
+        "en": "Knowledge base document not found",
+    },
+    ErrorCode.NORMATIVE_DOCUMENT_CODE_CONFLICT: {
+        "ru": "Документ с таким кодом уже существует",
+        "en": "A document with this code already exists",
     },
 }
 
