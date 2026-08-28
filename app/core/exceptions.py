@@ -41,6 +41,9 @@ class ErrorCode(StrEnum):
     DOCUMENT_ALREADY_FINALIZED = "DOCUMENT_ALREADY_FINALIZED"
     DOCUMENT_TEMPLATE_MISSING_FIELDS = "DOCUMENT_TEMPLATE_MISSING_FIELDS"
 
+    # Специфичные коды домена audit.
+    AUDIT_LOG_ENTRY_NOT_FOUND = "AUDIT_LOG_ENTRY_NOT_FOUND"
+
 
 #: HTTP-статус по умолчанию для каждого кода.
 _DEFAULT_STATUS: dict[ErrorCode, int] = {
@@ -68,6 +71,7 @@ _DEFAULT_STATUS: dict[ErrorCode, int] = {
     ErrorCode.DOCUMENT_TYPE_NOT_ALLOWED_FOR_ROLE: 403,
     ErrorCode.DOCUMENT_ALREADY_FINALIZED: 409,
     ErrorCode.DOCUMENT_TEMPLATE_MISSING_FIELDS: 400,
+    ErrorCode.AUDIT_LOG_ENTRY_NOT_FOUND: 404,
 }
 
 

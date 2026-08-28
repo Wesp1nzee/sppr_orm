@@ -112,6 +112,10 @@ MESSAGES: dict[ErrorCode, dict[str, str]] = {
         "ru": "Не заполнены обязательные поля шаблона: {fields}",
         "en": "Required template fields are missing: {fields}",
     },
+    ErrorCode.AUDIT_LOG_ENTRY_NOT_FOUND: {
+        "ru": "Запись журнала аудита не найдена",
+        "en": "Audit log entry not found",
+    },
 }
 
 
