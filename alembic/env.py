@@ -13,6 +13,7 @@ from alembic import context
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from app.audit.models import AuditLogEntry  # noqa: F401
 from app.auth.models import User  # noqa: F401 — регистрирует таблицы домена auth
 from app.checks.models import Check, CriterionResult  # noqa: F401
 from app.core.config import get_settings
