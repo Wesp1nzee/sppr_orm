@@ -234,11 +234,21 @@ app/
 
 ## Тестирование
 
-Тесты используют in-memory SQLite (`aiosqlite`) и `fakeredis`, без внешних
-сервисов. Порог покрытия — 85% (`.coverage` / `pyproject.toml`).
+Тесты используют in-memory SQLite (`aiosqlite`) с включённой проверкой внешних
+ключей и `fakeredis`, без внешних сервисов. Порог покрытия — 85%
+(`.coverage` / `pyproject.toml`).
 
 ```bash
 make test
+```
+
+Интеграционные тесты на реальном PostgreSQL 18 (весь набор + миграции Alembic,
+включая регрессию FK для `UserRegistered`):
+
+```bash
+# создать тестовую БД
+docker exec sppr-orm-postgres psql -U app -d postgres -c "CREATE DATABASE sppr_orm_test"
+make test-integration
 ```
 
 ## Ретеншен журнала аудита

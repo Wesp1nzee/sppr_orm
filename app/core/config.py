@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     ]
 
     database_url: str = "postgresql+asyncpg://app:app_secret@localhost:5432/sppr_orm"
+    # URL для интеграционных тестов
+    test_database_url: str | None = None
     db_echo: bool = False
 
     redis_url: str = "redis://localhost:6379/0"

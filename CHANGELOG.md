@@ -18,6 +18,8 @@
 - Локализация сообщений об ошибках (ru/en).
 - Rate limiting на эндпоинтах аутентификации.
 - CI (GitHub Actions): lint, typecheck, тесты, сборка Docker-образа.
+- Тесты: включена проверка внешних ключей в SQLite; интеграционный прогон всего
+  набора на реальном PostgreSQL 18 через `TEST_DATABASE_URL` (`make test-integration`).
 
 ### Каркасы (реализация не начата)
 

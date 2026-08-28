@@ -98,12 +98,12 @@ async def test_admin_can_list_logs_with_filters_and_pagination(
     session_factory: async_sessionmaker[AsyncSession],
 ) -> None:
     user_a = await user_factory("a@example.com", PASSWORD, UserRole.lawyer)
-    await user_factory("b@example.com", PASSWORD, UserRole.officer)
+    user_b = await user_factory("b@example.com", PASSWORD, UserRole.officer)
     await user_factory("admin@example.com", PASSWORD, UserRole.admin)
 
     await _add_entry(session_factory, event_type="CheckCreated", user_id=user_a.id)
     await _add_entry(session_factory, event_type="UserLoggedIn", user_id=user_a.id)
-    await _add_entry(session_factory, event_type="CheckCreated", user_id=uuid.uuid4())
+    await _add_entry(session_factory, event_type="CheckCreated", user_id=user_b.id)
 
     await _login(client, "admin@example.com")
 

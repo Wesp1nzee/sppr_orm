@@ -1,4 +1,4 @@
-.PHONY: lint format typecheck all run sync mm migrate rollback history current test createadmin
+.PHONY: lint format typecheck all run sync mm migrate rollback history current test test-integration createadmin
 
 # Запуск линтера
 lint:
@@ -22,6 +22,11 @@ run:
 # Запуск тестов
 test:
 	uv run pytest tests/ -v --cov=app --cov-report=term-missing
+
+# Интеграционные тесты на реальном PostgreSQL (нужен TEST_DATABASE_URL или поднятый PG)
+test-integration:
+	TEST_DATABASE_URL=$${TEST_DATABASE_URL:-postgresql+asyncpg://app:app_secret@localhost:5432/sppr_orm_test} \
+		uv run pytest tests/ -v --cov=app --cov-report=term-missing
 
 # Синхронизация зависимостей
 sync:

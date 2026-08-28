@@ -138,6 +138,7 @@ async def test_update_document_creates_new_version(
     admin.id = uuid.uuid4()
 
     async with session_factory() as session:
+        session.add(admin)
         repo = NormativeDocumentRepository(session)
         await repo.create_new_version(
             code="fz-ord-art8",
@@ -189,6 +190,7 @@ async def test_create_and_update_publish_events(
     bus = RecordingEventBus()
 
     async with session_factory() as session:
+        session.add(admin)
         service = KnowledgeBaseService(
             session, NormativeDocumentRepository(session), events=bus
         )
