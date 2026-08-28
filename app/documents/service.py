@@ -43,6 +43,31 @@ class DocumentCreated:
     document_type: DocumentType
 
 
+@dataclass(frozen=True)
+class DocumentFinalized:
+    """Событие: документ финализирован."""
+
+    document_id: uuid.UUID
+    user_id: uuid.UUID
+
+
+@dataclass(frozen=True)
+class DocumentExported:
+    """Событие: документ экспортирован в DOCX/PDF."""
+
+    document_id: uuid.UUID
+    user_id: uuid.UUID
+    format: ExportFormat
+
+
+@dataclass(frozen=True)
+class DocumentContentUpdated:
+    """Событие: содержимое черновика изменено."""
+
+    document_id: uuid.UUID
+    user_id: uuid.UUID
+
+
 class DocumentService:
     def __init__(
         self,
@@ -105,6 +130,9 @@ class DocumentService:
         if document.status is DocumentStatus.finalized:
             raise AppException(ErrorCode.DOCUMENT_ALREADY_FINALIZED)
         await self._repo.update_content(document, payload.content)
+        await self._events.publish(
+            DocumentContentUpdated(document_id=document.id, user_id=user.id)
+        )
         return self._to_out(document)
 
     async def finalize(
@@ -115,6 +143,9 @@ class DocumentService:
         if document.status is DocumentStatus.finalized:
             raise AppException(ErrorCode.DOCUMENT_ALREADY_FINALIZED)
         await self._repo.set_status(document, DocumentStatus.finalized)
+        await self._events.publish(
+            DocumentFinalized(document_id=document.id, user_id=user.id)
+        )
         return self._to_out(document)
 
     async def get_for_user(
@@ -163,8 +194,13 @@ class DocumentService:
         """Экспортирует финализированный документ в DOCX/PDF (байты файла)."""
         document = await self._require_owned(user, document_id)
         if format == "docx":
-            return export_docx(document.content, document.title)
-        return export_pdf(document.content, document.title)
+            content = export_docx(document.content, document.title)
+        else:
+            content = export_pdf(document.content, document.title)
+        await self._events.publish(
+            DocumentExported(document_id=document.id, user_id=user.id, format=format)
+        )
+        return content
 
     async def _require_owned(
         self, user: User, document_id: uuid.UUID
@@ -203,4 +239,10 @@ class DocumentService:
         return GeneratedDocumentListItem.model_validate(document)
 
 
-__all__ = ["DocumentCreated", "DocumentService"]
+__all__ = [
+    "DocumentContentUpdated",
+    "DocumentCreated",
+    "DocumentExported",
+    "DocumentFinalized",
+    "DocumentService",
+]

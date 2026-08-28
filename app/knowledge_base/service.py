@@ -1,10 +1,13 @@
 """Бизнес-логика домена «База знаний»: чтение, создание, версионирование."""
 
 import logging
+import uuid
+from dataclasses import dataclass
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User
+from app.core.events import EventBus, get_event_bus
 from app.core.exceptions import AppException, ErrorCode
 from app.core.pagination import PageParams
 from app.knowledge_base.models import NormativeSourceType
@@ -22,14 +25,33 @@ from app.knowledge_base.schemas import (
 logger = logging.getLogger("sppr_orm.knowledge_base")
 
 
+@dataclass(frozen=True)
+class NormativeDocumentCreated:
+    """Событие: создан нормативный документ (для подписчиков, напр. ``audit``)."""
+
+    code: str
+    admin_id: uuid.UUID
+
+
+@dataclass(frozen=True)
+class NormativeDocumentVersionCreated:
+    """Событие: создана новая версия нормативного документа."""
+
+    code: str
+    version: int
+    admin_id: uuid.UUID
+
+
 class KnowledgeBaseService:
     def __init__(
         self,
         session: AsyncSession,
         repo: NormativeDocumentRepositoryProtocol | None = None,
+        events: EventBus | None = None,
     ) -> None:
         self._session = session
         self._repo = repo or NormativeDocumentRepository(session)
+        self._events = events or get_event_bus()
 
     async def get_by_code(self, code: str) -> NormativeDocumentOut:
         doc = await self._repo.get_current_by_code(code)
@@ -82,6 +104,9 @@ class KnowledgeBaseService:
             source_url=payload.source_url,
             extra=payload.extra,
         )
+        await self._events.publish(
+            NormativeDocumentCreated(code=payload.code, admin_id=admin.id)
+        )
         return NormativeDocumentOut.model_validate(doc)
 
     async def update_document(
@@ -104,7 +129,16 @@ class KnowledgeBaseService:
         doc = await self._repo.create_new_version(
             code=code, admin_id=admin.id, **fields
         )
+        await self._events.publish(
+            NormativeDocumentVersionCreated(
+                code=code, version=doc.version, admin_id=admin.id
+            )
+        )
         return NormativeDocumentOut.model_validate(doc)
 
 
-__all__ = ["KnowledgeBaseService"]
+__all__ = [
+    "KnowledgeBaseService",
+    "NormativeDocumentCreated",
+    "NormativeDocumentVersionCreated",
+]

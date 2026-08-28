@@ -34,6 +34,13 @@ class UserLoggedOut:
     user_id: uuid.UUID
 
 
+@dataclass(frozen=True)
+class LoginFailed:
+    """Событие: неудачная попытка входа (для аудита; rate limiting — отдельно)."""
+
+    email: str
+
+
 def session_key(sid: str) -> str:
     """Ключ сессии в Redis: ``session:{sid}``."""
     return f"{settings.session_key_prefix}{sid}"
@@ -74,8 +81,10 @@ class AuthService:
     async def authenticate(self, email: str, password: str) -> User:
         user = await self._users.get_by_email(email)
         if user is None or not verify_password(password, user.hashed_password):
+            await self._events.publish(LoginFailed(email=email))
             raise AppException(ErrorCode.INVALID_CREDENTIALS)
         if not user.is_active:
+            await self._events.publish(LoginFailed(email=email))
             raise AppException(ErrorCode.ACCOUNT_DEACTIVATED)
         return user
 
