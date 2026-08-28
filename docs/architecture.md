@@ -12,7 +12,7 @@
 
 ## 2. Структура домена
 
-Каждый домен (`auth`, `checks`, `knowledge_base`, `documents`) следует
+Каждый домен (`auth`, `checks`, `knowledge_base`, `documents`, `audit`) следует
 одинаковому внутреннему шаблону:
 
 | Модуль | Ответственность |
@@ -66,13 +66,23 @@ HTTP → CSRFMiddleware → CORS → Router (app/api/v1)
 ## 6. Событийная шина и аудит
 
 Домены публикуют доменные события (`UserRegistered`, `UserLoggedIn`,
-`UserLoggedOut`, `CheckCreated`) в `EventBus`. Домен `audit` регистрирует
-заглушки-подписчики в `lifespan` и логирует события, но не пишет в БД.
+`UserLoggedOut`, `LoginFailed`, `CheckCreated`, `DocumentCreated`,
+`DocumentFinalized`, `DocumentExported`, `DocumentContentUpdated`,
+`NormativeDocumentCreated`, `NormativeDocumentVersionCreated`) в `EventBus`.
+Домен `audit` регистрирует подписчиков в `lifespan` и сохраняет события в
+`audit_log_entries` (append-only, без `updated_at`).
+
+Запись аудита выполняется синхронно внутри обработчика `EventBus` под
+собственную `AsyncSession` (`async_session_factory`), а не в HTTP request-scope:
+подписчик не находится внутри запроса и не может переиспользовать `DbSession`.
+`EventBus.publish` — fire-and-forget (глотает и логирует исключения
+обработчиков), поэтому ошибка записи аудита не роняет источник события.
+Интерфейс `AuditWriter` (`app/audit/subscribers.py`) оставляет seam для будущей
+асинхронной записи через очередь (контракт — [app/workers/README.md](../app/workers/README.md)).
 
 Связь между доменами — только через `EventBus` и типы событий, объявленные в
-доменах-источниках. Это позволяет в будущем добавить асинхронную запись аудита
-через фоновую очередь (контракт — [app/workers/README.md](../app/workers/README.md)),
-не меняя источники событий.
+доменах-источниках. Сводный отчёт по проверке (`app/audit/service.py`)
+переиспользует `app/documents/export.py` для рендера DOCX/PDF.
 
 ## 7. База данных
 
@@ -83,6 +93,11 @@ HTTP → CSRFMiddleware → CORS → Router (app/api/v1)
 - `generated_documents` — документы хранятся как структурированный JSONB
   (`content`), экспорт в DOCX/PDF выполняется на лету из финализированного
   содержимого (`app/documents/export.py`).
+- `audit_log_entries` — журнал аудита (append-only): событие, снимок роли,
+  `payload` (JSONB), `ip_address`. `user_id` — `ON DELETE SET NULL` (запись не
+  исчезает при удалении пользователя). Ретеншен ≥ 1 года обеспечивается
+  скриптом `scripts/purge_audit_log.py` (запуск вручную или по cron/systemd-
+  таймеру), см. `README.md`.
 
 ## 8. Тестирование
 
