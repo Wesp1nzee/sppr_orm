@@ -1,5 +1,5 @@
 import logging
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from redis.asyncio import from_url as redis_from_url
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.responses import Response
 
 from app.api.v1.router import api_router
 from app.audit import setup_audit_subscribers
@@ -17,6 +18,10 @@ from app.core.csrf import CSRFMiddleware
 from app.core.events import get_event_bus
 from app.core.exceptions import AppException, ErrorCode
 from app.core.messages import get_message, resolve_locale
+from app.core.request_context import (
+    reset_current_client_ip,
+    set_current_client_ip,
+)
 from app.core.schemas import ErrorBody, ErrorDetail, ErrorResponse
 
 logger = logging.getLogger("sppr_orm")
@@ -144,6 +149,17 @@ def create_app() -> FastAPI:
         allow_headers=["Content-Type", "X-CSRF-Token"],
         max_age=600,
     )
+
+    @app.middleware("http")
+    async def _client_ip_context(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        ip = request.client.host if request.client else None
+        token = set_current_client_ip(ip)
+        try:
+            return await call_next(request)
+        finally:
+            reset_current_client_ip(token)
 
     _register_exception_handlers(app)
 

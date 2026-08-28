@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from app.core.config import get_settings
+from app.core.request_context import reset_current_session, set_current_session
 
 settings = get_settings()
 
@@ -28,6 +29,7 @@ async_session_factory = async_sessionmaker(
 
 async def get_db() -> AsyncIterator[AsyncSession]:
     async with async_session_factory() as session:
+        token = set_current_session(session)
         try:
             yield session
         except Exception:
@@ -35,3 +37,5 @@ async def get_db() -> AsyncIterator[AsyncSession]:
             raise
         else:
             await session.commit()
+        finally:
+            reset_current_session(token)

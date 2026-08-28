@@ -1,7 +1,10 @@
 """Подписчики ``EventBus`` домена «Аудит»: записывают события в ``audit_log_entries``.
 
-Подписчики работают вне HTTP request-scope и открывают собственную сессию БД
-через ``async_session_factory``. ``EventBus.publish`` — fire-and-forget: он
+Запись выполняется в активной сессии запроса (``app.core.request_context``),
+если она есть — тогда аудит коммитится вместе с транзакцией источника (лёгкий
+outbox), а FK на ``users.id`` удовлетворяется даже для ещё не закоммиченного
+пользователя (например, ``UserRegistered``). Вне запроса открывается собственная
+сессия через ``async_session_factory``. ``EventBus.publish`` — fire-and-forget:
 глотает и логирует исключения обработчиков, поэтому ошибка записи аудита не
 роняет источник события.
 
@@ -24,6 +27,7 @@ from app.auth.repository import UserRepository
 from app.auth.service import LoginFailed, UserLoggedIn, UserLoggedOut, UserRegistered
 from app.checks.service import CheckCreated
 from app.core.events import EventBus
+from app.core.request_context import get_current_client_ip, get_current_session
 from app.db.session import async_session_factory
 from app.documents.service import (
     DocumentContentUpdated,
@@ -50,7 +54,7 @@ class AuditWriter(Protocol):
 
 
 class DatabaseAuditWriter:
-    """Синхронная запись в БД в собственной сессии.
+    """Запись в БД: в сессии запроса (при наличии), иначе — в собственной сессии.
 
     TODO(audit, ARQ): при появлении очереди реализовать ``AuditWriter``,
     ставящий задачу в очередь, не меняя сигнатуры подписчиков.
@@ -68,15 +72,29 @@ class DatabaseAuditWriter:
         user_id: uuid.UUID | None,
         payload: dict[str, Any],
     ) -> None:
+        current = get_current_session()
+        if current is not None:
+            await self._add(current, event_type, user_id, payload)
+            return
         async with self._session_factory() as session:
-            entry = AuditLogEntry(
-                event_type=event_type,
-                user_id=user_id,
-                user_role=await _resolve_role(session, user_id),
-                payload=payload,
-            )
-            await AuditLogRepository(session).add(entry)
+            await self._add(session, event_type, user_id, payload)
             await session.commit()
+
+    @staticmethod
+    async def _add(
+        session: AsyncSession,
+        event_type: str,
+        user_id: uuid.UUID | None,
+        payload: dict[str, Any],
+    ) -> None:
+        entry = AuditLogEntry(
+            event_type=event_type,
+            user_id=user_id,
+            user_role=await _resolve_role(session, user_id),
+            payload=payload,
+            ip_address=get_current_client_ip(),
+        )
+        await AuditLogRepository(session).add(entry)
 
 
 async def _resolve_role(session: AsyncSession, user_id: uuid.UUID | None) -> str | None:
