@@ -1615,7 +1615,7 @@ dev = [
     { name = "pytest", specifier = ">=8.3.0" },
     { name = "pytest-asyncio", specifier = ">=0.25.0" },
     { name = "pytest-cov", specifier = ">=6.0.0" },
-    { name = "ruff", specifier = ">=0.14.0" },
+    { name = "ruff", specifier = ">=0.16.4" },
 ]
 
 [[package]]

@@ -1,51 +1,75 @@
 # СППР ОРМ — Backend
 
+[![CI](https://github.com/Wesp1nzee/sppr_orm/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/Wesp1nzee/sppr_orm/actions)
+[![Python 3.14](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/downloads/)
+[![Coverage](https://img.shields.io/badge/coverage-85%25-green.svg)](#тестирование)
+[![License](https://img.shields.io/badge/license-proprietary-red.svg)](#лицензия)
+
+REST API системы поддержки принятия решений при проведении оперативно-розыскных
+мероприятий (ОРМ): автоматизирует оценку законности ОРМ по 14 критериям и
+генерацию процессуальных документов на основе результатов проверки.
+
+## Содержание
+
+- [Возможности](#возможности)
+- [Стек](#стек)
+- [Архитектура](#архитектура)
+- [Быстрый старт](#быстрый-старт)
+- [Запуск в Docker](#запуск-в-docker)
+- [Конфигурация](#конфигурация)
+- [Аутентификация и роли](#аутентификация-и-роли)
+- [Формат ответов и ошибки](#формат-ответов-и-ошибки)
+- [Структура проекта](#структура-проекта)
+- [Разработка](#разработка)
+- [Тестирование](#тестирование)
+- [Документация](#документация)
+- [Дорожная карта](#дорожная-карта)
+- [Лицензия](#лицензия)
+
+## Возможности
+
+- **Проверка законности ОРМ** — движок правил по 14 критериям с ролевыми
+  приоритетами и ссылками на нормы из базы знаний.
+- **Генерация документов** — процессуальные документы (ходатайства, жалобы,
+  чек-листы, план легализации) в DOCX и PDF из результатов проверки.
+- **База знаний** — нормативные материалы (ФЗ «Об ОРД», статьи УПК РФ,
+  определения КС РФ, постановления Пленума ВС РФ) с версионированием.
+- **Роли и RBAC** — четыре роли (`lawyer`, `investigator`, `officer`, `admin`)
+  с разграничением доступа и приоритизацией критериев.
+- **Безопасная аутентификация** — серверные сессии в Redis + подписанный
+  double-submit CSRF (без JWT), Argon2id для паролей, rate limiting на вход.
+- **Единый формат ответов** — envelope `{"data"}` / `{"error"}` + локализация
+  сообщений (`ru`/`en`).
+- **Событийная шина** — домены общаются через `EventBus` (основа для аудита).
+
 ## Стек
 
-- Python 3.14, менеджер пакетов `uv`
-- FastAPI + Pydantic V2
-- SQLAlchemy 2.0 (async) + asyncpg + PostgreSQL
-- Alembic (async-миграции)
-- Redis (сессии, кэш)
-- Auth: сессии в Redis + HttpOnly cookie `sid` + CSRF double-submit cookie (без JWT)
-- Пароли: Argon2id (pwdlib) для новых хэшей; bcrypt — legacy-схема верификации старых хэшей
+| Компонент | Технология |
+|-----------|------------|
+| Язык | Python 3.14 |
+| Пакетный менеджер | [uv](https://docs.astral.sh/uv/) |
+| Web-фреймворк | FastAPI + Pydantic V2 |
+| ORM | SQLAlchemy 2.0 (async) + asyncpg |
+| База данных | PostgreSQL 16 |
+| Миграции | Alembic (async) |
+| Кэш / сессии | Redis 7 |
+| Аутентификация | Redis-сессии + HttpOnly cookie `sid` + CSRF double-submit |
+| Хэширование паролей | Argon2id (`pwdlib`), bcrypt — legacy-верификация |
+| Генерация документов | Jinja2 + python-docx + ReportLab |
 
-## Зависимости (PostgreSQL, Redis)
+## Архитектура
 
-Перед запуском поднимите зависимости в Docker. Порты и учётные данные
-совпадают с дефолтами из `.env.example` / `app/core/config.py`.
+Домен-ориентированная структура (по образцу Netflix Dispatch / FastAPI Best
+Practices): один домен — одна папка со всем необходимым (`router`, `schemas`,
+`models`, `repository`, `service`, `dependencies`). Общее поведение вынесено в
+`app/core`, `app/db`, `app/api`.
 
-```bash
-docker compose up -d
-```
-
-Повторный запуск контейнеров после перезагрузки машины:
-
-```bash
-docker compose up -d
-```
-
-> Альтернатива без `docker compose` (эквивалент предыдущего способа):
->
-> ```bash
-> # PostgreSQL (user=app, password=app_secret, db=sppr_orm, порт 5432)
-> docker run -d --name sppr-orm-postgres \
->   -e POSTGRES_USER=app \
->   -e POSTGRES_PASSWORD=app_secret \
->   -e POSTGRES_DB=sppr_orm \
->   -p 5432:5432 \
->   postgres:16
->
-> # Redis (порт 6379)
-> docker run -d --name sppr-orm-redis \
->   -p 6379:6379 \
->   redis:7
->
-> # Повторный запуск после перезагрузки
-> docker start sppr-orm-postgres sppr-orm-redis
-> ```
+Подробнее — [docs/architecture.md](docs/architecture.md) и
+[ADR](docs/adr/README.md).
 
 ## Быстрый старт
+
+Требования: Python 3.14, `uv`, Docker (для PostgreSQL и Redis).
 
 ```bash
 # 1. Зависимости
@@ -54,25 +78,66 @@ uv sync
 # 2. Конфигурация
 cp .env.example .env
 
-# 3. Миграции
+# 3. Инфраструктура (PostgreSQL + Redis)
+docker compose up -d
+
+# 4. Миграции
 uv run alembic upgrade head
 
-# 4. Запуск
+# 5. Создание администратора (опционально)
+make createadmin EMAIL=admin@example.com PASSWORD=secret
+
+# 6. Запуск
 uv run fastapi dev app/main.py
 ```
 
 Swagger: <http://127.0.0.1:8000/docs>
 
-## Секреты в production
+> Альтернатива `docker compose` — отдельные контейнеры PostgreSQL и Redis,
+> см. `docker-compose.yml` для учётных данных (совпадают с дефолтами из
+> `.env.example`).
+
+## Запуск в Docker
+
+Production-образ собирается в два этапа (`Dockerfile`): зависимости ставятся в
+билдере на базе `uv`, в рантайм попадает только `python:3.14-slim` без dev-пакетов.
+
+```bash
+docker build -t sppr-orm .
+docker run --rm -p 8000:8000 sppr-orm
+```
+
+Секреты (`SECRET_KEY`, `DATABASE_URL`, `REDIS_URL`) в проде передаются через
+переменные окружения процесса, а не через `.env` внутри контейнера — см.
+[Секреты в production](#секреты-в-production).
+
+## Конфигурация
+
+Настройки читаются из переменных окружения и `.env` (приоритет: env > `.env`).
+Полный список с дефолтами — в `.env.example` и `app/core/config.py`.
+
+| Переменная | Назначение | Дефолт |
+|-----------|-----------|--------|
+| `APP_NAME` | Название сервиса | `СППР ОРМ` |
+| `APP_ENV` | Окружение (`development` / `testing` / `production`) | `development` |
+| `DEBUG` | Режим отладки FastAPI | `false` |
+| `SECRET_KEY` | Ключ для HMAC CSRF и подписи | `insecure-dev-key-change-me` |
+| `CORS_ORIGINS` | Разрешённые origins (JSON-массив) | `localhost:3000/5173` |
+| `DATABASE_URL` | DSN PostgreSQL (async) | `postgresql+asyncpg://app:app_secret@localhost:5432/sppr_orm` |
+| `DB_ECHO` | Логирование SQL | `false` |
+| `REDIS_URL` | DSN Redis | `redis://localhost:6379/0` |
+| `SESSION_TTL_SECONDS` | Скользящий TTL сессии | `1800` (30 мин) |
+| `SESSION_HARD_EXPIRE_SECONDS` | Жёсткий лимит сессии | `43200` (12 ч) |
+| `COOKIE_SECURE` | Флаг `Secure` для cookie | `false` |
+| `COOKIE_SAMESITE` | SameSite-политика | `lax` |
+
+### Секреты в production
 
 В проде `SECRET_KEY`, `DATABASE_URL` и `REDIS_URL` **не читаются из `.env`-файла
-внутри контейнера**. Они должны подставляться через секрет-менеджер окружения
-(Vault, AWS Secrets Manager, Kubernetes Secret и т.п.) как переменные окружения
-процесса.
-
-`pydantic-settings` уже поддерживает чтение из переменных окружения без `.env`
-(приоритет: env-переменные > `.env`-файл), поэтому код менять не нужно — важно
-только, чтобы секреты не попадали в образ и не лежали в файловой системе.
+внутри контейнера**. Они подставляются через секрет-менеджер окружения (Vault,
+AWS Secrets Manager, Kubernetes Secret и т.п.) как переменные окружения
+процесса. `pydantic-settings` уже поддерживает чтение из env без `.env` — менять
+код не нужно.
 
 Генерация `SECRET_KEY`:
 
@@ -80,38 +145,12 @@ Swagger: <http://127.0.0.1:8000/docs>
 python -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
-## Структура
+## Аутентификация и роли
 
-Домен-ориентированная структура (по образцу Netflix Dispatch / FastAPI Best
-Practices): один домен — одна папка со всем необходимым (router, schemas,
-models, repository, service, dependencies) внутри.
+Аутентификация — серверные сессии в Redis: клиент получает HttpOnly-cookie `sid`,
+состояние сессии хранится в Redis под ключом `session:{sid}`.
 
-```text
-app/
-├── main.py               # app factory, CORS, exception handlers, CSRF middleware
-├── core/                 # общее: config, exceptions, security, csrf, pagination,
-│                         # messages (i18n), routing (ApiRouter), deps (db/redis),
-│                         # envelope-схемы {"data"/"meta"}, {"error"}
-├── db/                   # async engine, session, Base — общее
-├── auth/                 # домен аутентификации (api.md, раздел 2)
-│   ├── router.py         # эндпоинты /auth
-│   ├── schemas.py        # Pydantic V2
-│   ├── models.py         # SQLAlchemy ORM (User, UserRole)
-│   ├── repository.py     # CRUD-запросы к БД
-│   ├── service.py        # бизнес-логика (Redis-сессии)
-│   └── dependencies.py   # get_current_user, require_roles
-├── checks/               # каркас: проверка по 14 критериям (ТЗ 3.1)
-├── documents/            # каркас: генератор документов (ТЗ 3.4)
-├── knowledge_base/       # каркас: база знаний (ТЗ 3.3)
-├── audit/                # каркас: логирование/аудит (ТЗ 3.5)
-├── api/
-│   └── v1/
-│       └── router.py     # агрегатор роутеров доменов
-├── workers/              # фоновые задачи (ARQ/Celery) — следующий этап
-└── templates/            # Jinja2 (отчёты, письма)
-```
-
-## Auth-флоу (frontend)
+Auth-флоу для frontend:
 
 1. Перед любой формой: `GET /api/v1/auth/csrf-token` → cookie `csrf_token`
    (НЕ HttpOnly) + значение в `data.csrf_token`.
@@ -121,15 +160,102 @@ app/
    продление; жёсткий лимит 12 ч) и обновляет `csrf_token`.
 4. Проверка сессии: `GET /api/v1/auth/me` (вызывается при старте SPA).
 
-## Форматы ответов
+### Роли
+
+| Роль | Кто | Доступ |
+|------|-----|--------|
+| `lawyer` | адвокат | ходатайства, жалоба; свои проверки и документы |
+| `investigator` | следователь | служебные документы; свои проверки и документы |
+| `officer` | оперативный сотрудник | чек-лист, план легализации; свои проверки |
+| `admin` | администратор | все проверки/документы, управление базой знаний |
+
+Роли определяют приоритетные критерии проверки и допустимые типы документов —
+подробнее в [docs/api.md](docs/api.md#роли-и-права).
+
+## Формат ответов и ошибки
 
 ```json
 {"data": { ... }, "meta": {"page": 1, "per_page": 20, "total": 134}}
 {"error": {"code": "VALIDATION_ERROR", "message": "...", "details": [{"field": "...", "issue": "..."}]}}
 ```
 
-## Проверка типов
+`meta` присутствует только в пагинированных ответах. Полный каталог кодов
+ошибок (27 кодов с HTTP-статусами) — в [docs/api.md](docs/api.md#каталог-кодов-ошибок).
+
+## Структура проекта
+
+```text
+app/
+├── main.py               # app factory, CORS, exception handlers, CSRF middleware
+├── core/                 # общее: config, exceptions, security, csrf, pagination,
+│                         # messages (i18n), routing (ApiRouter), deps (db/redis),
+│                         # events (EventBus), rate_limit, envelope-схемы
+├── db/                   # async engine, session, Base (UUID PK + timestamps)
+├── auth/                 # домен аутентификации
+│   ├── router.py         # эндпоинты /auth
+│   ├── schemas.py        # Pydantic V2
+│   ├── models.py         # SQLAlchemy ORM (User, UserRole)
+│   ├── repository.py     # CRUD-запросы к БД
+│   ├── service.py        # бизнес-логика (Redis-сессии)
+│   └── dependencies.py   # get_current_user, require_roles
+├── checks/               # проверка по 14 критериям + движок правил (rules/)
+├── documents/            # генерация документов (Jinja2-шаблоны, export DOCX/PDF)
+├── knowledge_base/       # база знаний (версионируемые нормативные документы)
+├── audit/                # каркас: подписчик EventBus (без записи в БД)
+├── api/
+│   └── v1/
+│       └── router.py     # агрегатор роутеров доменов
+├── workers/              # каркас: контракт фоновой очереди (ARQ/Redis)
+└── templates/            # (зарезервировано)
+```
+
+## Разработка
+
+Команды через `Makefile` (`make <target>`):
+
+| Команда | Действие |
+|---------|----------|
+| `make sync` | `uv sync` |
+| `make run` | запуск uvicorn с `--reload` |
+| `make format` | `ruff format` |
+| `make lint` | `ruff check` |
+| `make typecheck` | `mypy` |
+| `make all` | format + lint + typecheck |
+| `make test` | pytest + coverage |
+| `make mm m="..."` | автогенерация миграции |
+| `make migrate` / `make rollback` | применить / откатить миграцию |
+| `make createadmin` | создать администратора |
+
+Перед коммитом отрабатывает pre-commit (ruff format/check + mypy). Инструкции
+по внесению изменений и стиль коммитов — [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Тестирование
+
+Тесты используют in-memory SQLite (`aiosqlite`) и `fakeredis`, без внешних
+сервисов. Порог покрытия — 85% (`.coverage` / `pyproject.toml`).
 
 ```bash
-uv run mypy app
+make test
 ```
+
+## Документация
+
+- [docs/api.md](docs/api.md) — конвенции API, каталог ошибок, auth-флоу, пагинация.
+- [docs/architecture.md](docs/architecture.md) — архитектура и поток запроса.
+- [docs/adr/README.md](docs/adr/README.md) — записи об архитектурных решениях.
+- [app/workers/README.md](app/workers/README.md) — контракт фоновой очереди.
+
+Интерактивная схема API — Swagger UI (`/docs`) и ReDoc (`/redoc`).
+
+## Дорожная карта
+
+- [x] Аутентификация (Redis-сессии, CSRF, RBAC, rate limiting)
+- [x] Проверка по 14 критериям
+- [x] База знаний (CRUD + версионирование)
+- [x] Генерация документов (DOCX/PDF)
+- [ ] Аудит — запись событий `EventBus` в БД (сейчас заглушка-логгер)
+- [ ] Фоновые задачи — реализация очереди ARQ (зафиксирован контракт)
+
+## Лицензия
+
+Проприетарное ПО. Все права защищены.

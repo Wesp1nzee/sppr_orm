@@ -1,7 +1,7 @@
 [project]
 name = "sppr-orm"
 version = "0.1.0"
-description = "Add your description here"
+description = "REST API системы поддержки принятия решений при проведении ОРМ"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
@@ -28,7 +28,7 @@ dev = [
     "pytest>=8.3.0",
     "pytest-asyncio>=0.25.0",
     "pytest-cov>=6.0.0",
-    "ruff>=0.14.0",
+    "ruff>=0.16.4",
 ]
 
 [tool.pytest.ini_options]
@@ -49,8 +49,7 @@ disallow_untyped_defs = true
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "ASYNC", "S"]
-# Проект русскоязычный: кириллица в строках/комментариях — осознанная, а не
-# омоглифы для маскировки кода, поэтому исключаем её из RUF001/002/003.
+
 allowed-confusables = [
     "А", "Б", "В", "Г", "Д", "Е", "Ё", "Ж", "З", "И", "Й", "К", "Л", "М",
     "Н", "О", "П", "Р", "С", "Т", "У", "Ф", "Х", "Ц", "Ч", "Ш", "Щ", "Ъ",

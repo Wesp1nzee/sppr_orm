@@ -1,5 +1,3 @@
-"""Критерий 1: наличие признаков преступления и поручения следователя/дознавателя."""
-
 from typing import Any, ClassVar
 
 from app.checks.constants import CriterionStatus

@@ -2,7 +2,7 @@
 
 ``build_context`` готовит данные шаблона (результаты проверки, данные
 пользователя, ручные поля), а ``render_document`` рендерит ``.j2``-шаблон
-в JSON — этот словарь и есть ``GeneratedDocument.content`` (ТЗ, раздел 5).
+в JSON — этот словарь и есть ``GeneratedDocument.content``
 """
 
 import json
