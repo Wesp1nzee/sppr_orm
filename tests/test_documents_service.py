@@ -10,12 +10,18 @@ from app.auth.models import User, UserRole
 from app.checks.models import Check
 from app.checks.schemas import CheckCreateRequest
 from app.checks.service import CheckService
+from app.core.events import EventBus
 from app.core.exceptions import AppException
 from app.core.pagination import PageParams
 from app.documents.models import DocumentStatus, DocumentType, GeneratedDocument
 from app.documents.repository import GeneratedDocumentRepositoryProtocol
 from app.documents.schemas import DocumentContentUpdateRequest
-from app.documents.service import DocumentService
+from app.documents.service import (
+    DocumentContentUpdated,
+    DocumentExported,
+    DocumentFinalized,
+    DocumentService,
+)
 from app.knowledge_base.models import NormativeDocument
 from app.knowledge_base.service import KnowledgeBaseService
 
@@ -188,6 +194,28 @@ async def _create_check(checks: CheckService, user: User) -> uuid.UUID:
     return check.id
 
 
+class RecordingEventBus(EventBus):
+    """Фиксирует опубликованные события для проверки публикации доменных событий."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.events: list[Any] = []
+
+    async def publish(self, event: Any) -> None:
+        self.events.append(event)
+
+
+def _make_service_with_events(
+    events: RecordingEventBus,
+) -> tuple[DocumentService, FakeGeneratedDocumentRepository, CheckService]:
+    checks, _ = _make_checks()
+    doc_repo = FakeGeneratedDocumentRepository()
+    service = DocumentService(
+        session=None, repo=doc_repo, checks=checks, events=events  # type: ignore[arg-type]
+    )
+    return service, doc_repo, checks
+
+
 @pytest.mark.asyncio
 async def test_generate_and_edit_flow() -> None:
     user = _make_user(UserRole.lawyer)
@@ -321,3 +349,66 @@ async def test_list_for_check_and_user() -> None:
     )
     assert total_filtered == 1
     assert filtered[0].document_type is DocumentType.exclusion_motion
+
+
+@pytest.mark.asyncio
+async def test_update_content_publishes_document_content_updated() -> None:
+    user = _make_user(UserRole.lawyer)
+    events = RecordingEventBus()
+    service, _, checks = _make_service_with_events(events)
+    check_id = await _create_check(checks, user)
+
+    document = await service.generate(
+        user,
+        check_id,
+        DocumentType.exclusion_motion,
+        {"addressee": "Суд", "applicant_name": "Иванов", "case_number": "1"},
+    )
+    events.events.clear()
+
+    await service.update_content(
+        user, document.id, DocumentContentUpdateRequest(content={"адресат": "X"})
+    )
+    assert events.events and isinstance(events.events[-1], DocumentContentUpdated)
+    assert events.events[-1].document_id == document.id
+
+
+@pytest.mark.asyncio
+async def test_finalize_publishes_document_finalized() -> None:
+    user = _make_user(UserRole.lawyer)
+    events = RecordingEventBus()
+    service, _, checks = _make_service_with_events(events)
+    check_id = await _create_check(checks, user)
+
+    document = await service.generate(
+        user,
+        check_id,
+        DocumentType.exclusion_motion,
+        {"addressee": "Суд", "applicant_name": "Иванов", "case_number": "1"},
+    )
+    events.events.clear()
+
+    await service.finalize(user, document.id)
+    assert events.events and isinstance(events.events[-1], DocumentFinalized)
+    assert events.events[-1].document_id == document.id
+
+
+@pytest.mark.asyncio
+async def test_export_publishes_document_exported() -> None:
+    user = _make_user(UserRole.lawyer)
+    events = RecordingEventBus()
+    service, _, checks = _make_service_with_events(events)
+    check_id = await _create_check(checks, user)
+
+    document = await service.generate(
+        user,
+        check_id,
+        DocumentType.exclusion_motion,
+        {"addressee": "Суд", "applicant_name": "Иванов", "case_number": "1"},
+    )
+    events.events.clear()
+
+    await service.export(user, document.id, "pdf")
+    assert events.events and isinstance(events.events[-1], DocumentExported)
+    assert events.events[-1].document_id == document.id
+    assert events.events[-1].format == "pdf"

@@ -8,11 +8,16 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.auth.models import User, UserRole
+from app.core.events import EventBus
 from app.core.exceptions import AppException
 from app.knowledge_base.models import NormativeDocument, NormativeSourceType
 from app.knowledge_base.repository import NormativeDocumentRepository
-from app.knowledge_base.schemas import NormativeDocumentUpdate
-from app.knowledge_base.service import KnowledgeBaseService
+from app.knowledge_base.schemas import NormativeDocumentCreate, NormativeDocumentUpdate
+from app.knowledge_base.service import (
+    KnowledgeBaseService,
+    NormativeDocumentCreated,
+    NormativeDocumentVersionCreated,
+)
 
 
 class FakeNormativeDocumentRepository:
@@ -157,3 +162,55 @@ async def test_update_document_creates_new_version(
     assert [d.version for d in history] == [2, 1]
     assert history[0].is_current is True
     assert history[1].is_current is False
+
+
+class RecordingEventBus(EventBus):
+    """Фиксирует опубликованные события."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.events: list[Any] = []
+
+    async def publish(self, event: Any) -> None:
+        self.events.append(event)
+
+
+@pytest.mark.asyncio
+async def test_create_and_update_publish_events(
+    session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    admin = User(
+        email="admin@example.com",
+        hashed_password="x",
+        full_name="Админ",
+        role=UserRole.admin,
+    )
+    admin.id = uuid.uuid4()
+    bus = RecordingEventBus()
+
+    async with session_factory() as session:
+        service = KnowledgeBaseService(
+            session, NormativeDocumentRepository(session), events=bus
+        )
+        await service.create_document(
+            admin,
+            NormativeDocumentCreate(
+                source_type=NormativeSourceType.federal_law,
+                code="fz-ord-art8",
+                title="ФЗ «Об ОРД», ст. 8",
+                full_text="текст",
+            ),
+        )
+        await service.update_document(
+            admin, "fz-ord-art8", NormativeDocumentUpdate(title="v2")
+        )
+        await session.commit()
+
+    assert [type(e).__name__ for e in bus.events] == [
+        "NormativeDocumentCreated",
+        "NormativeDocumentVersionCreated",
+    ]
+    assert isinstance(bus.events[0], NormativeDocumentCreated)
+    assert bus.events[0].code == "fz-ord-art8"
+    assert isinstance(bus.events[1], NormativeDocumentVersionCreated)
+    assert bus.events[1].version == 2
