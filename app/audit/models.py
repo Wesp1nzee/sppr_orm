@@ -1,5 +1,4 @@
-"""Модели данных домена «Логирование/аудит» (ТЗ, раздел 3.5).
-
+"""
 Записи журнала аудита неизменяемы (append-only): без ``updated_at``. События
 событийной шины фиксируются как строка с типом события, снимком роли
 пользователя на момент события и произвольным ``payload`` (JSONB).
@@ -25,7 +24,6 @@ class AuditLogEntry(Base):
     __tablename__ = "audit_log_entries"
     __table_args__ = (Index("ix_audit_log_entries_created_at", "created_at"),)
 
-    #: Наследуемый ``updated_at`` из ``Base`` не нужен: записи append-only.
     updated_at = None  # type: ignore[assignment]
 
     event_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)

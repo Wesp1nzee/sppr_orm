@@ -1,5 +1,3 @@
-"""Pydantic-схемы домена «Логирование/аудит» (ТЗ, раздел 3.5)."""
-
 import uuid
 from datetime import datetime
 from typing import Any

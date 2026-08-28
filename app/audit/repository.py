@@ -1,5 +1,3 @@
-"""Репозиторий домена «Аудит»: чистые запросы к БД."""
-
 import uuid
 from datetime import datetime
 from typing import Any, Protocol, cast
