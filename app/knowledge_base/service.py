@@ -19,6 +19,8 @@ from app.knowledge_base.schemas import (
     NormativeDocumentCreate,
     NormativeDocumentListItem,
     NormativeDocumentOut,
+    NormativeDocumentSearchParams,
+    NormativeDocumentSearchResult,
     NormativeDocumentUpdate,
 )
 
@@ -87,6 +89,35 @@ class KnowledgeBaseService:
         if not docs:
             raise AppException(ErrorCode.NORMATIVE_DOCUMENT_NOT_FOUND)
         return [NormativeDocumentOut.model_validate(d) for d in docs]
+
+    async def search_documents(
+        self, params: NormativeDocumentSearchParams, page: PageParams
+    ) -> tuple[list[NormativeDocumentSearchResult], int]:
+        query = params.query.strip() if params.query else None
+        docs = await self._repo.search(
+            query=query,
+            source_type=params.source_type,
+            code=params.code,
+            date_from=params.date_from,
+            date_to=params.date_to,
+            page=page.page,
+            per_page=page.per_page,
+        )
+        total = await self._repo.count_search(
+            query=query,
+            source_type=params.source_type,
+            code=params.code,
+            date_from=params.date_from,
+            date_to=params.date_to,
+        )
+
+        results: list[NormativeDocumentSearchResult] = []
+        for doc in docs:
+            item = NormativeDocumentSearchResult.model_validate(doc)
+            if query:
+                item.highlight = await self._repo.get_highlighted_snippet(doc.id, query)
+            results.append(item)
+        return results, total
 
     async def create_document(
         self, admin: User, payload: NormativeDocumentCreate

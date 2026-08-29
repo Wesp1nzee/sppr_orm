@@ -85,6 +85,38 @@ class FakeNormativeDocumentRepository:
     ) -> NormativeDocument:
         raise NotImplementedError
 
+    async def search(
+        self,
+        *,
+        query: str | None,
+        source_type: Any,
+        code: str | None,
+        date_from: datetime | None,
+        date_to: datetime | None,
+        page: int,
+        per_page: int,
+    ) -> list[NormativeDocument]:
+        del query, source_type, code, date_from, date_to, page, per_page
+        return []
+
+    async def count_search(
+        self,
+        *,
+        query: str | None,
+        source_type: Any,
+        code: str | None,
+        date_from: datetime | None,
+        date_to: datetime | None,
+    ) -> int:
+        del query, source_type, code, date_from, date_to
+        return 0
+
+    async def get_highlighted_snippet(
+        self, document_id: uuid.UUID, query: str
+    ) -> str | None:
+        del document_id, query
+        return None
+
 
 class FakeGeneratedDocumentRepository(GeneratedDocumentRepositoryProtocol):
     def __init__(self) -> None:

@@ -3,11 +3,15 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, func
+from sqlalchemy import JSON, DateTime, Text, func
 from sqlalchemy.dialects.postgresql import JSONB as PGJSONB
+from sqlalchemy.dialects.postgresql import TSVECTOR as PGTSVECTOR
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 JSONB = JSON().with_variant(PGJSONB, "postgresql")
+# На Postgres — нативный tsvector (GIN/FTS), на SQLite деградирует до Text:
+# колонка хранится, но поиск по ней не выполняется (см. ADR 0004).
+TSVECTOR = Text().with_variant(PGTSVECTOR, "postgresql")
 
 
 class Base(DeclarativeBase):

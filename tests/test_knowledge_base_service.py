@@ -73,6 +73,38 @@ class FakeNormativeDocumentRepository:
         history.append(doc)
         return doc
 
+    async def search(
+        self,
+        *,
+        query: str | None,
+        source_type: NormativeSourceType | None,
+        code: str | None,
+        date_from: datetime | None,
+        date_to: datetime | None,
+        page: int,
+        per_page: int,
+    ) -> list[NormativeDocument]:
+        del query, source_type, code, date_from, date_to, page, per_page
+        return []
+
+    async def count_search(
+        self,
+        *,
+        query: str | None,
+        source_type: NormativeSourceType | None,
+        code: str | None,
+        date_from: datetime | None,
+        date_to: datetime | None,
+    ) -> int:
+        del query, source_type, code, date_from, date_to
+        return 0
+
+    async def get_highlighted_snippet(
+        self, document_id: uuid.UUID, query: str
+    ) -> str | None:
+        del document_id, query
+        return None
+
     def _current_docs(self) -> list[NormativeDocument]:
         return [d for docs in self._docs.values() for d in docs if d.is_current]
 

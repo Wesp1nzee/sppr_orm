@@ -15,6 +15,8 @@ from app.knowledge_base.schemas import (
     NormativeDocumentCreate,
     NormativeDocumentListItem,
     NormativeDocumentOut,
+    NormativeDocumentSearchParams,
+    NormativeDocumentSearchResult,
     NormativeDocumentUpdate,
 )
 from app.knowledge_base.service import KnowledgeBaseService
@@ -42,6 +44,25 @@ async def list_documents(
         source_type=source_type, page=page
     )
     return DataResponse[list[NormativeDocumentListItem]](
+        data=items,
+        meta=PageMeta(page=page.page, per_page=page.per_page, total=total),
+    )
+
+
+@router.get(
+    "/documents/search",
+    response_model=DataResponse[list[NormativeDocumentSearchResult]],
+    summary="Полнотекстовый поиск по документам базы знаний",
+    responses={401: {"description": "UNAUTHENTICATED — не авторизован"}},
+)
+async def search_documents(
+    user: CurrentUser,
+    db: DbSession,
+    params: Annotated[NormativeDocumentSearchParams, Query()],
+    page: Annotated[PageParams, Depends(get_page_params)],
+) -> DataResponse[list[NormativeDocumentSearchResult]]:
+    items, total = await KnowledgeBaseService(db).search_documents(params, page)
+    return DataResponse[list[NormativeDocumentSearchResult]](
         data=items,
         meta=PageMeta(page=page.page, per_page=page.per_page, total=total),
     )

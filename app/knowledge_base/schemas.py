@@ -74,10 +74,37 @@ class NormativeReferenceOut(BaseModel):
     source_url: str | None = None
 
 
+class NormativeDocumentSearchParams(BaseModel):
+    """Query-параметры полнотекстового поиска по базе знаний."""
+
+    query: str | None = Field(default=None, max_length=256)
+    source_type: NormativeSourceType | None = None
+    code: str | None = Field(default=None, max_length=64)
+    date_from: datetime | None = None
+    date_to: datetime | None = None
+
+
+class NormativeDocumentSearchResult(BaseModel):
+    """Элемент результата поиска: как ``ListItem`` + опциональный highlight."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    source_type: NormativeSourceType
+    code: str
+    title: str
+    summary: str | None
+    version: int
+    created_at: datetime
+    highlight: str | None = None
+
+
 __all__ = [
     "NormativeDocumentCreate",
     "NormativeDocumentListItem",
     "NormativeDocumentOut",
+    "NormativeDocumentSearchParams",
+    "NormativeDocumentSearchResult",
     "NormativeDocumentUpdate",
     "NormativeReferenceOut",
 ]

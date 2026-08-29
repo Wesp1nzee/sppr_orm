@@ -8,6 +8,7 @@
 | [0001](0001-signed-double-submit-csrf.md) | Подписанный double-submit cookie для CSRF | принято | 2026-08-26 |
 | [0002](0002-domain-oriented-structure.md) | Домен-ориентированная структура | принято | 2026-08-26 |
 | [0003](0003-audit-log-design.md) | Модель журнала аудита и синхронная запись из EventBus | принято | 2026-08-28 |
+| [0004](0004-knowledge-base-full-text-search.md) | Полнотекстовый поиск по базе знаний (tsvector) и деградация на SQLite | принято | 2026-08-29 |
 
 ## Формат
 

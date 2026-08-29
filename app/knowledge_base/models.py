@@ -14,7 +14,7 @@ from sqlalchemy import (
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.db.base import JSONB, Base
+from app.db.base import JSONB, TSVECTOR, Base
 
 
 class NormativeSourceType(StrEnum):
@@ -52,6 +52,7 @@ class NormativeDocument(Base):
     version: Mapped[int] = mapped_column(Integer, default=1)
     is_current: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     extra: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    search_vector: Mapped[Any] = mapped_column(TSVECTOR, nullable=True)
     created_by: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id"), nullable=True
     )
