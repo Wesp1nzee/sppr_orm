@@ -246,10 +246,13 @@ make test
 включая регрессию FK для `UserRegistered`):
 
 ```bash
-# создать тестовую БД
-docker exec sppr-orm-postgres psql -U app -d postgres -c "CREATE DATABASE sppr_orm_test"
 make test-integration
 ```
+
+Тестовая БД `sppr_orm_test` создаётся автоматически: при первом `docker compose
+up -d` — init-скриптом (`docker/initdb/01-create-test-db.sql`), на уже
+существующем volume — целью `make test-db` (идемпотентно, вызывается перед
+прогоном тестов).
 
 ## Ретеншен журнала аудита
 

@@ -1,4 +1,4 @@
-.PHONY: lint format typecheck all run sync mm migrate rollback history current test test-integration createadmin
+.PHONY: lint format typecheck all run sync mm migrate rollback history current test test-integration test-db createadmin
 
 # Запуск линтера
 lint:
@@ -23,8 +23,14 @@ run:
 test:
 	uv run pytest tests/ -v --cov=app --cov-report=term-missing
 
-# Интеграционные тесты на реальном PostgreSQL (нужен TEST_DATABASE_URL или поднятый PG)
-test-integration:
+# Создать тестовую БД для интеграционных тестов (идемпотентно)
+test-db:
+	@docker exec sppr-orm-postgres psql -U app -d postgres -tAc \
+		"SELECT 1 FROM pg_database WHERE datname='sppr_orm_test'" | grep -q 1 || \
+		docker exec sppr-orm-postgres psql -U app -d postgres -c "CREATE DATABASE sppr_orm_test"
+
+# Интеграционные тесты на реальном PostgreSQL
+test-integration: test-db
 	TEST_DATABASE_URL=$${TEST_DATABASE_URL:-postgresql+asyncpg://app:app_secret@localhost:5432/sppr_orm_test} \
 		uv run pytest tests/ -v --cov=app --cov-report=term-missing
 
