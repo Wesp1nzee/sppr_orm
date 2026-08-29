@@ -1,4 +1,4 @@
-"""Pydantic-схемы домена «Генерация документов» (ТЗ, раздел 3.4)."""
+"""Pydantic-схемы домена «Генерация документов»."""
 
 import uuid
 from datetime import datetime

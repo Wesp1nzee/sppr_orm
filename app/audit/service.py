@@ -75,9 +75,8 @@ class AuditService:
     ) -> AuditSummaryReportOut:
         """Сводный отчёт: проверка + критерии + документы + журнал действий.
 
-        Доступ — владелец проверки ИЛИ admin (ТЗ 3.5 ограничивает полным
-        доступом только журналы аудита; отчёт по собственной проверке доступен
-        пользователю).
+        Доступ — владелец проверки ИЛИ admin (полным доступом ограничены только
+        журналы аудита; отчёт по собственной проверке доступен пользователю).
         """
         check = await CheckRepository(self._session).get_by_id(check_id)
         if check is None or (
@@ -116,7 +115,7 @@ class AuditService:
         return export_pdf(content, title)
 
     async def purge_expired(self, retention_days: int = 365) -> int:
-        """Удаляет записи старше ``retention_days`` (ТЗ, раздел 4 — ≥ 1 года)."""
+        """Удаляет записи старше ``retention_days`` (≥ 1 года)."""
         cutoff = datetime.now(UTC) - timedelta(days=retention_days)
         return await self._repo.delete_older_than(cutoff)
 

@@ -1,4 +1,4 @@
-"""Интеграционные тесты API домена «Проверки» (ТЗ, раздел 13)."""
+"""Интеграционные тесты API домена «Проверки»."""
 
 import uuid
 from collections.abc import Awaitable, Callable

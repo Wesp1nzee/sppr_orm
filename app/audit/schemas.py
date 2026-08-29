@@ -55,7 +55,7 @@ class AuditDocumentReport(BaseModel):
 
 
 class AuditSummaryReportOut(BaseModel):
-    """Сводный отчёт по результатам проверки (ТЗ, раздел 3.5)."""
+    """Сводный отчёт по результатам проверки."""
 
     check: AuditCheckReport
     criterion_results: list[CriterionResultOut]

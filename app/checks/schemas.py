@@ -1,4 +1,4 @@
-"""Pydantic-схемы домена «Проверка по 14 критериям» (ТЗ, разделы 7-8)."""
+"""Pydantic-схемы домена «Проверка по 14 критериям»."""
 
 import uuid
 from datetime import datetime

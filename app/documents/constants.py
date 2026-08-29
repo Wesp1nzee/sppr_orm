@@ -1,14 +1,13 @@
-"""Константы домена «Генерация документов» (ТЗ, разделы 3.2, 3.4)."""
+"""Константы домена «Генерация документов»."""
 
 from app.auth.models import UserRole
 from app.documents.models import DocumentType
 
-#: Версия шаблонов — сохраняется в каждом документе (``template_version``).
+# Версия шаблонов  сохраняется в каждом документе
 TEMPLATE_VERSION = "1.0.0"
 
-#: Допустимые типы документов по ролям (ТЗ, раздел 3.2):
-#: адвокат формирует ходатайства и жалобу, следователь и оперативный сотрудник —
-#: служебные документы планирования/легализации, администратор — все типы.
+# адвокат формирует ходатайства и жалобу, следователь и оперативный сотрудник —
+# служебные документы планирования/легализации, администратор — все типы.
 DOCUMENT_TYPES_BY_ROLE: dict[UserRole, frozenset[DocumentType]] = {
     UserRole.lawyer: frozenset(
         {
@@ -33,7 +32,6 @@ DOCUMENT_TYPES_BY_ROLE: dict[UserRole, frozenset[DocumentType]] = {
     UserRole.admin: frozenset(DocumentType),
 }
 
-#: Человекочитаемые заголовки документов (используются как ``title`` по умолчанию).
 DOCUMENT_TITLES: dict[DocumentType, str] = {
     DocumentType.exclusion_motion: "Ходатайство об исключении доказательств",
     DocumentType.court_decision_copy_request: (
@@ -46,7 +44,6 @@ DOCUMENT_TITLES: dict[DocumentType, str] = {
     DocumentType.legalization_plan: "План процессуальной легализации результатов ОРМ",
 }
 
-#: Обязательные ручные поля запроса на генерацию (нет ни в Check, ни в User).
 REQUIRED_EXTRA_FIELDS: dict[DocumentType, tuple[str, ...]] = {
     DocumentType.exclusion_motion: ("addressee", "applicant_name", "case_number"),
     DocumentType.court_decision_copy_request: (
@@ -59,8 +56,6 @@ REQUIRED_EXTRA_FIELDS: dict[DocumentType, tuple[str, ...]] = {
     DocumentType.legalization_plan: (),
 }
 
-#: Критерии, релевантные каждому типу документа: в «перечень нарушений» попадают
-#: только результаты с этими номерами со статусом violation/attention.
 RELEVANT_CRITERIA: dict[DocumentType, frozenset[int]] = {
     DocumentType.exclusion_motion: frozenset(range(1, 15)),
     DocumentType.court_decision_copy_request: frozenset({10}),
@@ -69,8 +64,6 @@ RELEVANT_CRITERIA: dict[DocumentType, frozenset[int]] = {
     DocumentType.legalization_plan: frozenset({9, 10, 11}),
 }
 
-#: Определения КС РФ, релевантные для ходатайства об исключении доказательств
-#: (ТЗ, Приложение Б). Ссылки фиксируются в ``content["ссылки_на_кс_рф"]``.
 KS_RF_RULINGS: list[dict[str, str]] = [
     {
         "number": "86-О",

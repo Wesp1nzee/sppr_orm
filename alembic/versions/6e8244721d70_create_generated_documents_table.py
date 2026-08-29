@@ -62,9 +62,7 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-        sa.ForeignKeyConstraint(
-            ["check_id"], ["checks.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["check_id"], ["checks.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )

@@ -19,7 +19,7 @@ from app.documents.models import DocumentType
 
 _env = Environment(
     loader=PackageLoader("app.documents", "templates"),
-    autoescape=False,  # noqa: S701 — шаблоны выводят JSON, а не HTML
+    autoescape=False,  # noqa: S701 шаблоны выводят JSON, а не HTML
     trim_blocks=True,
     lstrip_blocks=True,
 )
@@ -105,7 +105,7 @@ def build_context(
 def _relevant_violations(
     check: CheckOut, document_type: DocumentType
 ) -> list[dict[str, Any]]:
-    """Нарушения, релевантные типу документа (ТЗ: не тащить все 14 без разбора)."""
+    """Нарушения, релевантные типу документа (не тащить все 14 без разбора)."""
     numbers = RELEVANT_CRITERIA[document_type]
     return [
         {

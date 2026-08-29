@@ -15,14 +15,14 @@ TOTAL_CRITERIA = 14
 
 
 class CriterionStatus(StrEnum):
-    """Статус прохождения критерия (ТЗ, раздел 8)."""
+    """Статус прохождения критерия."""
 
     PASSED = "passed"
     VIOLATION = "violation"
     ATTENTION = "attention"
 
 
-#: Приоритетные критерии по ролям (ТЗ, раздел 9). У admin приоритетов нет —
+#: Приоритетные критерии по ролям. У admin приоритетов нет —
 #: администратор видит все проверки и результаты без выделения.
 PRIORITY_BY_ROLE: dict[UserRole, frozenset[int]] = {
     UserRole.lawyer: frozenset({2, 5, 6, 9, 10, 13}),

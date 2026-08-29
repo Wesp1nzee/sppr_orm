@@ -1,4 +1,4 @@
-"""Pydantic-схемы домена «База знаний» (ТЗ, раздел 3.3)."""
+"""Pydantic-схемы домена «База знаний»."""
 
 import uuid
 from datetime import datetime
