@@ -185,7 +185,11 @@ def _make_service() -> tuple[
 ]:
     checks, _ = _make_checks()
     doc_repo = FakeGeneratedDocumentRepository()
-    service = DocumentService(session=None, repo=doc_repo, checks=checks)  # type: ignore[arg-type]
+    service = DocumentService(
+        session=None,  # type: ignore[arg-type]
+        repo=doc_repo,
+        checks=checks,
+    )
     return service, doc_repo, checks
 
 
@@ -211,7 +215,10 @@ def _make_service_with_events(
     checks, _ = _make_checks()
     doc_repo = FakeGeneratedDocumentRepository()
     service = DocumentService(
-        session=None, repo=doc_repo, checks=checks, events=events  # type: ignore[arg-type]
+        session=None,  # type: ignore[arg-type]
+        repo=doc_repo,
+        checks=checks,
+        events=events,
     )
     return service, doc_repo, checks
 
