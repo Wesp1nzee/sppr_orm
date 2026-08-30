@@ -24,3 +24,6 @@ htmlcov/
 *.log
 .deepseek
 .opencodeignore
+
+# Загруженные материалы дела (локальное хранилище)
+case_materials_storage/

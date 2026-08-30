@@ -56,6 +56,8 @@ class Settings(BaseSettings):
     rate_limit_register_per_minute: int = 3
     rate_limit_window_seconds: int = 60
 
+    case_materials_storage_dir: str = "./case_materials_storage"
+
 
 @lru_cache
 def get_settings() -> Settings:

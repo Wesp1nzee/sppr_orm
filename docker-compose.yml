@@ -30,3 +30,6 @@ services:
 
 volumes:
   postgres_data:
+  # Зарезервировано под будущий сервис приложения: хранилище загруженных
+  # материалов дела (settings.case_materials_storage_dir).
+  case_materials_data:

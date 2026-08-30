@@ -8,6 +8,11 @@
 
 ### Добавлено
 
+- Импорт материалов дела (PDF/DOCX): извлечение текста, сегментация по типам
+  документов ОРД, черновик ответов для мастера проверки и подтверждение с
+  созданием `Check` (`POST /case-materials`, `GET /case-materials/{id}`,
+  `POST /case-materials/{id}/confirm`).
+- Аудит: запись события `CaseMaterialUploaded` в журнал.
 - Аудит: запись событий `EventBus` в `audit_log_entries`, admin-журнал с
   фильтрами и пагинацией, сводный отчёт по проверке с экспортом DOCX/PDF и
   ретеншен журнала (`scripts/purge_audit_log.py`).

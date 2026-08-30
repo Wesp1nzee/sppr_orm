@@ -25,6 +25,7 @@ from app.audit.models import AuditLogEntry
 from app.audit.repository import AuditLogRepository
 from app.auth.repository import UserRepository
 from app.auth.service import LoginFailed, UserLoggedIn, UserLoggedOut, UserRegistered
+from app.case_materials.service import CaseMaterialUploaded
 from app.checks.service import CheckCreated
 from app.core.events import EventBus
 from app.core.request_context import get_current_client_ip, get_current_session
@@ -162,6 +163,16 @@ async def _on_check_created(writer: AuditWriter, event: CheckCreated) -> None:
     )
 
 
+async def _on_case_material_uploaded(
+    writer: AuditWriter, event: CaseMaterialUploaded
+) -> None:
+    await writer.write(
+        event_type="CaseMaterialUploaded",
+        user_id=event.user_id,
+        payload=_payload(event),
+    )
+
+
 async def _on_document_created(writer: AuditWriter, event: DocumentCreated) -> None:
     await writer.write(
         event_type="DocumentCreated",
@@ -226,6 +237,7 @@ def setup_audit_subscribers(
     bus.subscribe(UserLoggedOut, partial(_on_user_logged_out, w))
     bus.subscribe(LoginFailed, partial(_on_login_failed, w))
     bus.subscribe(CheckCreated, partial(_on_check_created, w))
+    bus.subscribe(CaseMaterialUploaded, partial(_on_case_material_uploaded, w))
     bus.subscribe(DocumentCreated, partial(_on_document_created, w))
     bus.subscribe(DocumentFinalized, partial(_on_document_finalized, w))
     bus.subscribe(DocumentExported, partial(_on_document_exported, w))

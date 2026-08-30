@@ -116,6 +116,22 @@ MESSAGES: dict[ErrorCode, dict[str, str]] = {
         "ru": "Запись журнала аудита не найдена",
         "en": "Audit log entry not found",
     },
+    ErrorCode.CASE_MATERIAL_NOT_FOUND: {
+        "ru": "Материал дела не найден",
+        "en": "Case material not found",
+    },
+    ErrorCode.CASE_MATERIAL_FILE_TOO_LARGE: {
+        "ru": "Файл превышает допустимый размер",
+        "en": "File exceeds the maximum allowed size",
+    },
+    ErrorCode.CASE_MATERIAL_UNSUPPORTED_FORMAT: {
+        "ru": "Неподдерживаемый формат файла. Допустимы PDF и DOCX",
+        "en": "Unsupported file format. PDF and DOCX are allowed",
+    },
+    ErrorCode.CASE_MATERIAL_NOT_READY: {
+        "ru": "Материал ещё не готов для подтверждения: извлечение текста не завершено",
+        "en": "Material is not ready for confirmation: text extraction is not finished",
+    },
 }
 
 

@@ -187,6 +187,15 @@ Middleware сверяет cookie с заголовком `X-CSRF-Token` и с HM
 |-----|------|----------|
 | `AUDIT_LOG_ENTRY_NOT_FOUND` | 404 | Запись журнала аудита не найдена |
 
+### `case_materials`
+
+| Код | HTTP | Описание |
+|-----|------|----------|
+| `CASE_MATERIAL_NOT_FOUND` | 404 | Материал дела не найден |
+| `CASE_MATERIAL_FILE_TOO_LARGE` | 400 | Файл превышает допустимый размер (25 МБ) |
+| `CASE_MATERIAL_UNSUPPORTED_FORMAT` | 400 | Неподдерживаемый формат (допустимы PDF/DOCX) |
+| `CASE_MATERIAL_NOT_READY` | 409 | Извлечение текста не завершено/завершилось ошибкой |
+
 ## 5. Обзор эндпоинтов
 
 ### `auth` — `/api/v1/auth`
@@ -278,6 +287,33 @@ Middleware сверяет cookie с заголовком `X-CSRF-Token` и с HM
 | GET | `/logs/{entry_id}` | Запись журнала по id | admin |
 | GET | `/reports/{check_id}/summary` | Сводный отчёт по проверке (JSON) | владелец или admin |
 | GET | `/reports/{check_id}/export` | Экспорт сводного отчёта (DOCX/PDF) | владелец или admin |
+
+### `case_materials` — `/api/v1/case-materials`
+
+| Метод | Путь | Описание | Доступ |
+|-------|------|----------|--------|
+| POST | `` | Загрузка файла PDF/DOCX, извлечение текста и сегментация | авторизованный |
+| GET | `` | Список загрузок (свои / все для admin) | авторизованный |
+| GET | `/{upload_id}` | Детали материала: статус, обнаруженные документы, черновик | владелец или admin |
+| POST | `/{upload_id}/confirm` | Подтверждение черновика → создание проверки (`Check`) | владелец или admin |
+
+#### Импорт материалов дела — `POST /case-materials`
+
+Принимает `multipart/form-data` с одним файлом (поле `file`). Допустимые
+MIME-типы: `application/pdf` и
+`application/vnd.openxmlformats-officedocument.wordprocessingml.document`; размер
+до 25 МБ. Извлечение выполняется синхронно в рамках запроса; `Check` **не
+создаётся** — только черновик ответов (`suggested_check_answers`) и распознанные
+документы (`detected_documents`). Если текст не извлёкся (скан/нечитаемый файл) —
+статус `text_extraction_failed` + сообщение в `error_message` (HTTP-код остаётся
+201, пользователь продолжает через ручной ввод).
+
+#### Подтверждение черновика — `POST /case-materials/{upload_id}/confirm`
+
+Тело: `{"case_title": "…", "answers": {"criterion_1": {"…": …}}}`. Создаёт
+`Check` через обычный `CheckService.create` (тот же путь, что ручной ввод) и
+возвращает `CheckOut`. При статусе материала, отличном от `extracted`, — `409
+CASE_MATERIAL_NOT_READY`.
 
 ## 6. Локализация
 

@@ -191,3 +191,49 @@ def user_factory(
         return user
 
     return _make
+
+
+@pytest.fixture
+def pdf_factory() -> Callable[[list[str]], bytes]:
+    """Генерирует PDF с текстовым слоем (кириллица через DejaVu)."""
+    import io
+
+    from reportlab.pdfbase import pdfmetrics  # type: ignore[import-untyped]
+    from reportlab.pdfbase.ttfonts import TTFont  # type: ignore[import-untyped]
+    from reportlab.pdfgen import canvas  # type: ignore[import-untyped]
+
+    font = "DejaVu"
+    if font not in pdfmetrics.getRegisteredFontNames():
+        pdfmetrics.registerFont(
+            TTFont(font, "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
+        )
+
+    def _make(lines: list[str]) -> bytes:
+        buffer = io.BytesIO()
+        pdf = canvas.Canvas(buffer)
+        pdf.setFont(font, 10)
+        for index, line in enumerate(lines):
+            pdf.drawString(50, 780 - index * 16, line)
+        pdf.save()
+        return buffer.getvalue()
+
+    return _make
+
+
+@pytest.fixture
+def docx_factory() -> Callable[[list[str]], bytes]:
+    """Генерирует DOCX с абзацами текста."""
+
+    def _make(paragraphs: list[str]) -> bytes:
+        import io
+
+        from docx import Document
+
+        document = Document()
+        for paragraph in paragraphs:
+            document.add_paragraph(paragraph)
+        buffer = io.BytesIO()
+        document.save(buffer)
+        return buffer.getvalue()
+
+    return _make

@@ -24,6 +24,7 @@ from app.auth.service import (
     UserLoggedOut,
     UserRegistered,
 )
+from app.case_materials.service import CaseMaterialUploaded
 from app.checks.service import CheckCreated
 from app.core.events import EventBus
 from app.core.request_context import (
@@ -93,6 +94,7 @@ async def test_all_events_persist_with_correct_type_and_payload(
     user_id = user.id
     check_id = uuid.uuid4()
     document_id = uuid.uuid4()
+    upload_id = uuid.uuid4()
 
     events: list[tuple[str, object]] = [
         ("UserRegistered", UserRegistered(user_id=user_id, email="a@example.com")),
@@ -100,6 +102,10 @@ async def test_all_events_persist_with_correct_type_and_payload(
         ("UserLoggedOut", UserLoggedOut(user_id=user_id)),
         ("LoginFailed", LoginFailed(email="b@example.com")),
         ("CheckCreated", CheckCreated(check_id=check_id, user_id=user_id)),
+        (
+            "CaseMaterialUploaded",
+            CaseMaterialUploaded(upload_id=upload_id, user_id=user_id),
+        ),
         (
             "DocumentCreated",
             DocumentCreated(
@@ -153,6 +159,10 @@ async def test_all_events_persist_with_correct_type_and_payload(
     version = entries["NormativeDocumentVersionCreated"]
     assert version.payload["version"] == 2
     assert version.user_id == user_id
+
+    material = entries["CaseMaterialUploaded"]
+    assert material.payload["upload_id"] == str(upload_id)
+    assert material.user_id == user_id
 
     failed = entries["LoginFailed"]
     assert failed.user_id is None
