@@ -1,6 +1,8 @@
 """Эндпоинты аутентификации (api.md, раздел 2.2)."""
 
-from fastapi import Depends, Request, Response, status
+from typing import Annotated
+
+from fastapi import Depends, Header, Request, Response, status
 
 from app.auth.dependencies import CurrentUser
 from app.auth.schemas import (
@@ -119,6 +121,7 @@ async def login(
     response: Response,
     db: DbSession,
     redis: RedisClient,
+    x_csrf_token: Annotated[str | None, Header(alias="X-CSRF-Token")] = None,
 ) -> DataResponse[LoginData]:
     service = AuthService(db, redis)
     user = await service.authenticate(payload.email, payload.password)
