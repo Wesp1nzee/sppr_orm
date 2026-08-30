@@ -23,11 +23,16 @@ run:
 test:
 	uv run pytest tests/ -v --cov=app --cov-report=term-missing
 
-# Создать тестовую БД для интеграционных тестов (идемпотентно)
+# Создать тестовую БД для интеграционных тестов (идемпотентно).
+# Работает только с локальным docker-compose (контейнер sppr-orm-postgres);
+# в CI Postgres поднят как services.postgres и БД уже создаётся через
+# POSTGRES_DB, поэтому при отсутствии контейнера шаг просто пропускается.
 test-db:
-	@docker exec sppr-orm-postgres psql -U app -d postgres -tAc \
-		"SELECT 1 FROM pg_database WHERE datname='sppr_orm_test'" | grep -q 1 || \
-		docker exec sppr-orm-postgres psql -U app -d postgres -c "CREATE DATABASE sppr_orm_test"
+	@if docker ps --format '{{.Names}}' | grep -q '^sppr-orm-postgres$$'; then \
+		docker exec sppr-orm-postgres psql -U app -d postgres -tAc \
+			"SELECT 1 FROM pg_database WHERE datname='sppr_orm_test'" | grep -q 1 || \
+		docker exec sppr-orm-postgres psql -U app -d postgres -c "CREATE DATABASE sppr_orm_test"; \
+	fi
 
 # Интеграционные тесты на реальном PostgreSQL
 test-integration: test-db
